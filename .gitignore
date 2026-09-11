@@ -1,0 +1,60 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Cognitive DataOps — repository ignore rules
+#
+# NOTE: this file did not exist before, which is why `node_modules` was
+# accidentally committed. See README "Day 0 / Git hygiene" for the one-time
+# `git rm -r --cached` cleanup that pairs with this file.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Asset storage (the local "S3-mimic" bucket root).
+# Uploaded CAD/GLB binaries are runtime data, never source control.
+# The directory itself is kept via a tracked .gitkeep so a fresh clone still
+# has a valid storage root before the first upload.
+# ─────────────────────────────────────────────────────────────────────────────
+/storage/assets/*
+!/storage/assets/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Claude Code local tooling artifacts (skills are installed per-machine)
+skills-lock.json
+.agents/
+.claude/
+agent/

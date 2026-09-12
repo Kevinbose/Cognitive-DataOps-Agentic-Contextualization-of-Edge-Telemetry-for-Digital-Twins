@@ -1,0 +1,28 @@
+{
+  "name": "@cognitive-dataops/client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cognitive DataOps console — React Three Fiber digital twin viewer and spatial sensor-mapping UI.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.0"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
+    "@reduxjs/toolkit": "^2.12.0",
+    "react": "~19.2.0",
+    "react-dom": "~19.2.0",
+    "react-redux": "^9.3.0",
+    "react-router-dom": "^7.18.3",
+    "three": "^0.186.0"
+  }
+}

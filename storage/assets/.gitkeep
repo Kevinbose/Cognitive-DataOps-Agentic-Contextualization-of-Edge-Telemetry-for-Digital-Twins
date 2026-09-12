@@ -1,0 +1,10 @@
+# Storage root for the local "S3-mimic" asset bucket.
+#
+# Layout written at runtime by server/src/services/storage.service.js:
+#
+#   storage/assets/<assetId>/original.stp     <- raw CAD, provenance only, never rendered
+#   storage/assets/<assetId>/converted.glb    <- web-ready mesh, served to React Three Fiber
+#
+# Everything in this directory except this .gitkeep is gitignored.
+# Storage keys stored in MongoDB are relative POSIX paths ("assets/<id>/converted.glb"),
+# so swapping this filesystem root for a real S3 bucket only touches storage.service.js.

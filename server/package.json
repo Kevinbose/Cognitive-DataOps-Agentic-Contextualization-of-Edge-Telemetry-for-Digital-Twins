@@ -1,0 +1,25 @@
+{
+  "name": "@cognitive-dataops/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cognitive DataOps API — asset pipeline, mesh-node registry, and sensor-binding service.",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "helmet": "^8.0.0",
+    "mongoose": "^8.9.5",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.1",
+    "zod": "^3.24.1"
+  }
+}

@@ -22,6 +22,7 @@ import { Asset, ASSET_STATUS } from '../models/Asset.model.js';
 import { MeshNode } from '../models/MeshNode.model.js';
 import { SensorBinding } from '../models/SensorBinding.model.js';
 import { ApiError } from '../utils/ApiError.js';
+import { DOMAIN_EVENT, emitDomainEvent } from '../utils/domainEvents.js';
 import { withTransaction } from '../utils/transaction.js';
 import * as meshNodeService from './meshNode.service.js';
 
@@ -84,143 +85,184 @@ export async function bindSensorToMeshName({
   // the schema's `uppercase: true` only applies once a document is written.
   const normalisedSensorId = sensorId.trim().toUpperCase();
 
-  return withTransaction(
-    async (session) => {
-      /* ── 1. Resolve (or register) the target mesh node ──────────────────── */
-      const meshNodeCountBefore = await MeshNode.countDocuments({
-        assetId,
-        meshName,
-        isDeleted: false,
-      }).session(session);
+  /** @type {BindingResult & {affectedAssetIds: string[]}} */
+  let outcome;
 
-      const meshNode = await meshNodeService.findOrCreateByName({
-        assetId,
-        meshName,
-        displayName,
-        nodePath,
-        objectType,
-        createdBy: boundBy,
-        session,
-      });
+  try {
+    outcome = await withTransaction(
+      async (session) => {
+        /* ── 1. Resolve (or register) the target mesh node ──────────────────── */
+        const meshNodeCountBefore = await MeshNode.countDocuments({
+          assetId,
+          meshName,
+          isDeleted: false,
+        }).session(session);
 
-      const meshNodeCreated = meshNodeCountBefore === 0;
+        const meshNode = await meshNodeService.findOrCreateByName({
+          assetId,
+          meshName,
+          displayName,
+          nodePath,
+          objectType,
+          createdBy: boundBy,
+          session,
+        });
 
-      /* ── 2. Is this exact binding already in place? ─────────────────────── */
-      const currentOnMesh = await SensorBinding.findOne({
-        meshNodeId: meshNode._id,
-        isActive: true,
-      }).session(session);
+        const meshNodeCreated = meshNodeCountBefore === 0;
 
-      if (
-        currentOnMesh &&
-        currentOnMesh.sensorId === normalisedSensorId &&
-        (sensorType === undefined || currentOnMesh.sensorType === sensorType)
-      ) {
-        // Idempotent: re-submitting the same mapping is a no-op, not an error.
-        // Keeps the UI safe against double-clicks and retried requests.
-        return {
-          binding: currentOnMesh.toJSON(),
-          meshNode: meshNode.toJSON(),
-          meshNodeCreated,
-          replacedPreviousBinding: false,
-          unchanged: true,
-        };
-      }
+        /* ── 2. Is this exact binding already in place? ─────────────────────── */
+        const currentOnMesh = await SensorBinding.findOne({
+          meshNodeId: meshNode._id,
+          isActive: true,
+        }).session(session);
 
-      /* ── 3. Is this sensor already driving a different mesh? ────────────── */
-      const currentOnSensor = await SensorBinding.findOne({
-        sensorId: normalisedSensorId,
-        isActive: true,
-      }).session(session);
+        if (
+          currentOnMesh &&
+          currentOnMesh.sensorId === normalisedSensorId &&
+          (sensorType === undefined || currentOnMesh.sensorType === sensorType)
+        ) {
+          // Idempotent: re-submitting the same mapping is a no-op, not an error.
+          // Keeps the UI safe against double-clicks and retried requests.
+          return {
+            binding: currentOnMesh.toJSON(),
+            meshNode: meshNode.toJSON(),
+            meshNodeCreated,
+            replacedPreviousBinding: false,
+            unchanged: true,
+            affectedAssetIds: [],
+          };
+        }
 
-      const sensorHeldElsewhere =
-        currentOnSensor && String(currentOnSensor.meshNodeId) !== String(meshNode._id);
+        /* ── 3. Is this sensor already driving a different mesh? ────────────── */
+        const currentOnSensor = await SensorBinding.findOne({
+          sensorId: normalisedSensorId,
+          isActive: true,
+        }).session(session);
 
-      if (sensorHeldElsewhere && !reassign) {
-        // Refuse by default. Silently relocating a sensor from another part of
-        // the plant is exactly the kind of "helpful" behaviour that produces a
-        // twin nobody trusts. The caller can opt in explicitly.
-        throw ApiError.conflict(
-          `Sensor "${normalisedSensorId}" is already bound to another mesh in this deployment. ` +
-            'Unbind it first, or retry with `reassign: true` to move it.',
-          [{ field: 'sensorId', message: 'Sensor already has an active binding' }],
-        );
-      }
+        const sensorHeldElsewhere =
+          currentOnSensor && String(currentOnSensor.meshNodeId) !== String(meshNode._id);
 
-      const now = new Date();
-
-      /* ── 4. Retire whatever is being replaced ───────────────────────────── */
-      if (sensorHeldElsewhere) {
-        await SensorBinding.updateOne(
-          { _id: currentOnSensor._id },
-          { $set: { isActive: false, unboundAt: now } },
-          { session },
-        );
-        // The mesh that just lost its sensor needs its mirror flag refreshed.
-        await meshNodeService.syncIsMapped(currentOnSensor.meshNodeId, session);
-      }
-
-      if (currentOnMesh) {
-        await SensorBinding.updateOne(
-          { _id: currentOnMesh._id },
-          { $set: { isActive: false, unboundAt: now } },
-          { session },
-        );
-      }
-
-      /* ── 5. Create the new live binding ─────────────────────────────────── */
-      let created;
-      try {
-        [created] = await SensorBinding.create(
-          [
-            {
-              assetId,
-              meshNodeId: meshNode._id,
-              sensorId: normalisedSensorId,
-              ...(sensorType ? { sensorType } : {}),
-              boundBy: boundBy ?? null,
-              notes: notes ?? null,
-              boundAt: now,
-              isActive: true,
-            },
-          ],
-          { session },
-        );
-      } catch (error) {
-        if (error?.code === 11000) {
-          // A concurrent request won the race for this sensor or mesh. The
-          // index did its job; translate it into an actionable 409.
+        if (sensorHeldElsewhere && !reassign) {
+          // Refuse by default. Silently relocating a sensor from another part of
+          // the plant is exactly the kind of "helpful" behaviour that produces a
+          // twin nobody trusts. The caller can opt in explicitly.
           throw ApiError.conflict(
-            'That sensor or mesh was bound by a concurrent request. Reload and try again.',
-            [{ field: 'sensorId', message: 'Duplicate active binding' }],
+            `Sensor "${normalisedSensorId}" is already bound to another mesh in this deployment. ` +
+              'Unbind it first, or retry with `reassign: true` to move it.',
+            [{ field: 'sensorId', message: 'Sensor already has an active binding' }],
           );
         }
-        throw error;
-      }
 
-      /* ── 6. Keep the denormalised mirrors honest ────────────────────────── */
-      await meshNodeService.syncIsMapped(meshNode._id, session);
+        const now = new Date();
 
-      // First successful mapping promotes the asset along the status ratchet.
-      if (asset.promoteStatus(ASSET_STATUS.MAPPED)) {
-        await asset.save({ session });
-      }
+        /* ── 4. Retire whatever is being replaced ───────────────────────────── */
+        if (sensorHeldElsewhere) {
+          await SensorBinding.updateOne(
+            { _id: currentOnSensor._id },
+            { $set: { isActive: false, unboundAt: now } },
+            { session },
+          );
+          // The mesh that just lost its sensor needs its mirror flag refreshed.
+          await meshNodeService.syncIsMapped(currentOnSensor.meshNodeId, session);
+        }
 
-      // Mirror the flag on the in-memory document rather than re-reading it.
-      // A fresh query outside this session would not see the uncommitted write,
-      // and querying inside it just to echo a value we already know is waste.
-      meshNode.isMapped = true;
+        if (currentOnMesh) {
+          await SensorBinding.updateOne(
+            { _id: currentOnMesh._id },
+            { $set: { isActive: false, unboundAt: now } },
+            { session },
+          );
+        }
 
-      return {
-        binding: created.toJSON(),
-        meshNode: meshNode.toJSON(),
-        meshNodeCreated,
-        replacedPreviousBinding: Boolean(currentOnMesh),
-        unchanged: false,
-      };
-    },
-    { label: `bind ${normalisedSensorId} → ${meshName}` },
-  );
+        /* ── 5. Create the new live binding ─────────────────────────────────── */
+        let created;
+        try {
+          [created] = await SensorBinding.create(
+            [
+              {
+                assetId,
+                meshNodeId: meshNode._id,
+                sensorId: normalisedSensorId,
+                ...(sensorType ? { sensorType } : {}),
+                boundBy: boundBy ?? null,
+                notes: notes ?? null,
+                boundAt: now,
+                isActive: true,
+              },
+            ],
+            { session },
+          );
+        } catch (error) {
+          if (error?.code === 11000) {
+            // A concurrent request won the race for this sensor or mesh. The
+            // index did its job; translate it into an actionable 409.
+            throw ApiError.conflict(
+              'That sensor or mesh was bound by a concurrent request. Reload and try again.',
+              [{ field: 'sensorId', message: 'Duplicate active binding' }],
+            );
+          }
+          throw error;
+        }
+
+        /* ── 6. Keep the denormalised mirrors honest ────────────────────────── */
+        await meshNodeService.syncIsMapped(meshNode._id, session);
+
+        // First successful mapping promotes the asset along the status ratchet.
+        if (asset.promoteStatus(ASSET_STATUS.MAPPED)) {
+          await asset.save({ session });
+        }
+
+        // Mirror the flag on the in-memory document rather than re-reading it.
+        // A fresh query outside this session would not see the uncommitted write,
+        // and querying inside it just to echo a value we already know is waste.
+        meshNode.isMapped = true;
+
+        return {
+          binding: created.toJSON(),
+          meshNode: meshNode.toJSON(),
+          meshNodeCreated,
+          replacedPreviousBinding: Boolean(currentOnMesh),
+          unchanged: false,
+          // `uniq_active_sensor` is global, so a reassign can retire a binding
+          // that belongs to a DIFFERENT asset. Its viewers need refreshing too.
+          affectedAssetIds: [
+            ...new Set([
+              String(assetId),
+              ...(sensorHeldElsewhere ? [String(currentOnSensor.assetId)] : []),
+            ]),
+          ],
+        };
+      },
+      { label: `bind ${normalisedSensorId} → ${meshName}` },
+    );
+  } catch (error) {
+    // On a standalone MongoDB there is no rollback, so an unexpected failure
+    // midway can leave committed changes behind. Refresh the caches for this
+    // asset in that case. An expected refusal (a 409 conflict, say) wrote
+    // nothing, so it does not warrant a reload.
+    const expected = error?.isOperational === true && error.statusCode < 500;
+    if (!expected) {
+      emitDomainEvent(DOMAIN_EVENT.BINDING_CHANGED, {
+        assetIds: [String(assetId)],
+        reason: 'bind-error',
+      });
+    }
+    throw error;
+  }
+
+  const { affectedAssetIds, ...result } = outcome;
+
+  // Emitted AFTER the transaction resolved. The driver may re-run the callback
+  // on a replica set, and listeners must never see state that could still roll
+  // back. No event when nothing changed.
+  if (!result.unchanged) {
+    emitDomainEvent(DOMAIN_EVENT.BINDING_CHANGED, {
+      assetIds: affectedAssetIds,
+      reason: 'bind',
+    });
+  }
+
+  return result;
 }
 
 /**
@@ -249,6 +291,11 @@ export async function unbindById(bindingId) {
 
   await meshNodeService.syncIsMapped(binding.meshNodeId);
 
+  emitDomainEvent(DOMAIN_EVENT.BINDING_CHANGED, {
+    assetIds: [String(binding.assetId)],
+    reason: 'unbind',
+  });
+
   return binding.toJSON();
 }
 
@@ -275,9 +322,11 @@ export async function listBindingsForAsset(assetId, { includeInactive = false } 
 /**
  * Resolve which mesh a sensor currently drives.
  *
- * Not used by the Phase 2 UI — this is the reverse lookup Phase 3's MQTT
- * ingestion will call on every inbound reading, and it is the reason
- * `SensorBinding` is a standalone collection with its own `sensorId` index.
+ * Not used by the Phase 2 UI. The live ingestion path does NOT call this per
+ * sample: it reads the in-memory `bindingIndex.service.js`, which is reloaded
+ * from the same query whenever a binding changes. This remains the canonical
+ * single-sensor lookup, and the reason `SensorBinding` is a standalone
+ * collection with its own `sensorId` index.
  *
  * @param {string} sensorId - Logical sensor identifier (case-insensitive).
  * @returns {Promise<object|null>} The active binding with its mesh node

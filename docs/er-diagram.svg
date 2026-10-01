@@ -1,0 +1,205 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1770 1120" width="1770" height="1120" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">
+<title>Cognitive DataOps data model</title>
+<desc>Edge gateways publish over MQTT to a Node service that stores devices and time-series readings. Assets, mesh nodes and sensor bindings form the twin, joined to telemetry by sensorId.</desc>
+<rect width="1770" height="1120" fill="#E7E8E4"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#35413F"/></marker></defs>
+<text x="40" y="56" font-size="28" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">Data model and data flow</text>
+<text x="40" y="84" font-size="15" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">Two ESP32 gateways play a welding robot and a stamping press. Telemetry joins the twin through sensorId.</text>
+<rect x="40" y="120" width="270" height="76" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<text x="56" y="148" font-size="16" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">ESP32 gateway, robot</text>
+<text x="56" y="172" font-size="13" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">robot-weld-01  (torque, deviation, temp)</text>
+<rect x="40" y="220" width="270" height="76" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<text x="56" y="248" font-size="16" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">ESP32 gateway, press</text>
+<text x="56" y="272" font-size="13" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">press-stamp-01  (current, pressure, vibration)</text>
+<rect x="400" y="170" width="250" height="76" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<text x="416" y="198" font-size="16" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">MQTT broker</text>
+<text x="416" y="222" font-size="13" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">TLS 8883, cdo/v1/{site}/{machine}/...</text>
+<rect x="740" y="120" width="360" height="176" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<text x="756" y="148" font-size="16" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">Node ingestion service</text>
+<text x="756" y="172" font-size="13" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">validate every message (zod, strict)</text>
+<text x="756" y="192" font-size="13" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">device status, Last Will, sequence loss</text>
+<text x="756" y="212" font-size="13" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">binding index: sensorId to mesh name</text>
+<text x="756" y="232" font-size="13" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">batched writes, 1 Hz per channel</text>
+<text x="756" y="252" font-size="13" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">Socket.io fan-out, volatile at 4 Hz</text>
+<rect x="1190" y="170" width="280" height="76" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<text x="1206" y="198" font-size="16" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">React twin</text>
+<text x="1206" y="222" font-size="13" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">live values, spectrum, 3D highlights</text>
+<line x1="310" y1="158" x2="400" y2="190" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="310" y1="258" x2="400" y2="228" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="650" y1="208" x2="740" y2="208" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="1100" y1="208" x2="1190" y2="208" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="1145" y="196" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">websocket</text>
+<text x="525" y="266" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">birth, status, telemetry, spectrum, diag</text>
+<rect x="40" y="400" width="470" height="279" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<rect x="40" y="400" width="470" height="44" fill="#DCDED9" stroke="#777D74" stroke-width="1.5"/>
+<text x="56" y="429" font-size="17" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">Asset</text>
+<text x="56" y="466" font-size="13" font-weight="500" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">_id</text>
+<text x="494" y="466" font-size="12" font-weight="600" fill="#135E66" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">PK</text>
+<line x1="41" y1="472" x2="509" y2="472" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="491" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">name</text>
+<line x1="41" y1="497" x2="509" y2="497" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="516" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">uploader</text>
+<line x1="41" y1="522" x2="509" y2="522" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="541" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">sourceType</text>
+<text x="145" y="541" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">stp | step | iges</text>
+<line x1="41" y1="547" x2="509" y2="547" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="566" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">status</text>
+<text x="113.4" y="566" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">pending_conversion &gt; converted &gt; mapped</text>
+<line x1="41" y1="572" x2="509" y2="572" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="591" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">originalFile</text>
+<text x="160.8" y="591" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">raw CAD, audit only</text>
+<line x1="41" y1="597" x2="509" y2="597" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="616" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">convertedFile</text>
+<text x="168.7" y="616" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">web-ready .glb</text>
+<line x1="41" y1="622" x2="509" y2="622" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="641" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">version</text>
+<text x="121.30000000000001" y="641" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">bumps the ?v= cache-buster</text>
+<line x1="41" y1="647" x2="509" y2="647" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="666" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">isDeleted</text>
+<text x="137.10000000000002" y="666" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">soft delete</text>
+<rect x="40" y="760" width="470" height="254" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<rect x="40" y="760" width="470" height="44" fill="#DCDED9" stroke="#777D74" stroke-width="1.5"/>
+<text x="56" y="789" font-size="17" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">MeshNode</text>
+<text x="56" y="826" font-size="13" font-weight="500" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">_id</text>
+<text x="494" y="826" font-size="12" font-weight="600" fill="#135E66" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">PK</text>
+<line x1="41" y1="832" x2="509" y2="832" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="851" font-size="13" font-weight="500" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">assetId</text>
+<text x="494" y="851" font-size="12" font-weight="600" fill="#135E66" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">FK</text>
+<line x1="41" y1="857" x2="509" y2="857" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="876" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">meshName</text>
+<text x="129.2" y="876" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">glTF name, verbatim</text>
+<line x1="41" y1="882" x2="509" y2="882" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="901" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">displayName</text>
+<text x="152.9" y="901" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">operator label</text>
+<line x1="41" y1="907" x2="509" y2="907" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="926" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">nodePath</text>
+<line x1="41" y1="932" x2="509" y2="932" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="951" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">objectType</text>
+<text x="145" y="951" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">Mesh | Group</text>
+<line x1="41" y1="957" x2="509" y2="957" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="976" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">isMapped</text>
+<text x="129.2" y="976" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">mirror of live binding</text>
+<line x1="41" y1="982" x2="509" y2="982" stroke="#BABEB6" stroke-width="1"/>
+<text x="56" y="1001" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">isDeleted</text>
+<text x="137.10000000000002" y="1001" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">soft delete</text>
+<rect x="650" y="400" width="470" height="254" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<rect x="650" y="400" width="470" height="44" fill="#DCDED9" stroke="#777D74" stroke-width="1.5"/>
+<text x="666" y="429" font-size="17" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">SensorBinding</text>
+<text x="666" y="466" font-size="13" font-weight="500" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">_id</text>
+<text x="1104" y="466" font-size="12" font-weight="600" fill="#135E66" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">PK</text>
+<line x1="651" y1="472" x2="1119" y2="472" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="491" font-size="13" font-weight="500" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">assetId</text>
+<text x="1104" y="491" font-size="12" font-weight="600" fill="#135E66" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">FK</text>
+<line x1="651" y1="497" x2="1119" y2="497" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="516" font-size="13" font-weight="500" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">meshNodeId</text>
+<text x="1104" y="516" font-size="12" font-weight="600" fill="#135E66" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">FK</text>
+<line x1="651" y1="522" x2="1119" y2="522" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="541" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">sensorId</text>
+<text x="739.2" y="541" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">MACHINE-ID.CHANNEL_KEY</text>
+<line x1="651" y1="547" x2="1119" y2="547" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="566" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">sensorType</text>
+<text x="755" y="566" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">torque, pressure, ...</text>
+<line x1="651" y1="572" x2="1119" y2="572" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="591" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">isActive</text>
+<text x="739.2" y="591" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">retired rows are history</text>
+<line x1="651" y1="597" x2="1119" y2="597" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="616" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">boundAt / unboundAt</text>
+<line x1="651" y1="622" x2="1119" y2="622" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="641" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">boundBy / notes</text>
+<rect x="1260" y="400" width="470" height="279" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<rect x="1260" y="400" width="470" height="44" fill="#DCDED9" stroke="#777D74" stroke-width="1.5"/>
+<text x="1276" y="429" font-size="17" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">Device</text>
+<text x="1276" y="466" font-size="13" font-weight="500" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">machineId</text>
+<text x="1714" y="466" font-size="12" font-weight="600" fill="#135E66" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">PK</text>
+<text x="1357.1" y="466" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">robot-weld-01 | press-stamp-01</text>
+<line x1="1261" y1="472" x2="1729" y2="472" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="491" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">siteId / machineType / label</text>
+<line x1="1261" y1="497" x2="1729" y2="497" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="516" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">fw / mac / bootId</text>
+<line x1="1261" y1="522" x2="1729" y2="522" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="541" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">channels[]</text>
+<text x="1365" y="541" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">key, unit, range, limits</text>
+<line x1="1261" y1="547" x2="1729" y2="547" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="566" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">spectrum</text>
+<text x="1349.2" y="566" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">bins, step, fundamentalHz</text>
+<line x1="1261" y1="572" x2="1729" y2="572" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="591" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">scenarios[]</text>
+<line x1="1261" y1="597" x2="1729" y2="597" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="616" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">brokerStatus / lastSeenAt</text>
+<line x1="1261" y1="622" x2="1729" y2="622" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="641" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">diag</text>
+<text x="1317.6" y="641" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">rssi, heap, reconnects</text>
+<line x1="1261" y1="647" x2="1729" y2="647" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="666" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">simTruth</text>
+<text x="1349.2" y="666" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">server only, never emitted</text>
+<rect x="1260" y="760" width="470" height="154" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<rect x="1260" y="760" width="470" height="44" fill="#DCDED9" stroke="#777D74" stroke-width="1.5"/>
+<text x="1276" y="789" font-size="17" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">TelemetryReading</text>
+<rect x="1618.8" y="770" width="99.2" height="24" fill="#135E66"/>
+<text x="1668.4" y="787" font-size="12" font-weight="500" fill="#F9FAF8" text-anchor="middle" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">time series</text>
+<text x="1276" y="826" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">ts</text>
+<text x="1301.8" y="826" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">timeField, TTL 48 h</text>
+<line x1="1261" y1="832" x2="1729" y2="832" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="851" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">meta.sensorId</text>
+<text x="1388.7" y="851" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">MACHINE-ID.CHANNEL_KEY</text>
+<line x1="1261" y1="857" x2="1729" y2="857" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="876" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">value</text>
+<line x1="1261" y1="882" x2="1729" y2="882" stroke="#BABEB6" stroke-width="1"/>
+<text x="1276" y="901" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">q</text>
+<text x="1293.9" y="901" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">1 when the clock was not trusted</text>
+<rect x="650" y="760" width="470" height="154" fill="#F3F4F1" stroke="#777D74" stroke-width="1.5"/>
+<rect x="650" y="760" width="470" height="44" fill="#DCDED9" stroke="#777D74" stroke-width="1.5"/>
+<text x="666" y="789" font-size="17" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">TelemetrySpectrum</text>
+<rect x="1008.8" y="770" width="99.2" height="24" fill="#135E66"/>
+<text x="1058.4" y="787" font-size="12" font-weight="500" fill="#F9FAF8" text-anchor="middle" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">time series</text>
+<text x="666" y="826" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">ts</text>
+<text x="691.8" y="826" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">timeField, TTL 48 h</text>
+<line x1="651" y1="832" x2="1119" y2="832" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="851" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">meta.machineId</text>
+<line x1="651" y1="857" x2="1119" y2="857" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="876" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">meta.key</text>
+<text x="739.2" y="876" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">BEARING_SPECTRUM</text>
+<line x1="651" y1="882" x2="1119" y2="882" stroke="#BABEB6" stroke-width="1"/>
+<text x="666" y="901" font-size="13" font-weight="400" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">amp[]</text>
+<text x="715.5" y="901" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">64 bins of 12.5 Hz</text>
+<line x1="160" y1="679" x2="160" y2="760" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<text x="174" y="709" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">assetId</text>
+<text x="140" y="695" font-size="13" font-weight="600" fill="#151D1C" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">1</text>
+<text x="140" y="752" font-size="15" font-weight="600" fill="#151D1C" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">*</text>
+<polyline points="510,500 620,500 620,500 650,500" fill="none" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="518" y="492" font-size="13" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">1</text>
+<text x="616" y="492" font-size="15" font-weight="600" fill="#151D1C" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">*</text>
+<text x="565" y="490" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">assetId</text>
+<polyline points="510,820 580,820 580,614 650,614" fill="none" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="518" y="812" font-size="13" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">1</text>
+<text x="642" y="606" font-size="15" font-weight="600" fill="#151D1C" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">*</text>
+<text x="580" y="844" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">meshNodeId</text>
+<text x="580" y="861" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">one live binding</text>
+<text x="580" y="877" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">per mesh</text>
+<line x1="1120" y1="527" x2="1260" y2="527" stroke="#35413F" stroke-width="1.5" stroke-dasharray="7 5"/>
+<text x="1190" y="503" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">sensorId</text>
+<text x="1190" y="519" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">logical join</text>
+<text x="1190" y="545" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">no foreign key</text>
+<line x1="1420" y1="679" x2="1420" y2="760" stroke="#35413F" stroke-width="1.5" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<text x="1436" y="713" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">meta.sensorId</text>
+<polyline points="1320,679 1320,749 1060,749 1060,760" fill="none" stroke="#35413F" stroke-width="1.5" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<text x="1190" y="741" font-size="12" font-weight="400" fill="#56625F" text-anchor="middle" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">meta.machineId</text>
+<polyline points="920,296 920,340 1500,340 1500,400" fill="none" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="940" y="332" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">registry, rebuilt from retained birth and status</text>
+<polyline points="1100,270 1240,270 1240,860 1260,860" fill="none" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="1240" y1="860" x2="1120" y2="860" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<circle cx="1240" cy="860" r="4.5" fill="#35413F"/>
+<text x="1232" y="804" font-size="12" font-weight="400" fill="#56625F" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">batched inserts</text>
+<text x="1232" y="820" font-size="12" font-weight="400" fill="#56625F" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">1 Hz per channel</text>
+<text x="650" y="684" font-size="13" font-weight="600" fill="#151D1C" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">Partial unique indexes, where isActive is true:</text>
+<text x="650" y="706" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">sensorId   a sensor drives at most one mesh</text>
+<text x="650" y="726" font-size="12" font-weight="400" fill="#56625F" text-anchor="start" font-family="'IBM Plex Mono','Cascadia Mono',Consolas,'Courier New',monospace">meshNodeId a mesh has at most one sensor</text>
+<line x1="40" y1="1064" x2="90" y2="1064" stroke="#35413F" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="100" y="1069" font-size="13" font-weight="400" fill="#35413F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">foreign key</text>
+<line x1="220" y1="1064" x2="270" y2="1064" stroke="#35413F" stroke-width="1.5" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<text x="280" y="1069" font-size="13" font-weight="400" fill="#35413F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">logical join by value</text>
+<rect x="460" y="1052" width="86" height="24" fill="#135E66"/>
+<text x="503" y="1069" font-size="12" font-weight="500" fill="#F9FAF8" text-anchor="middle" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">time series</text>
+<text x="560" y="1069" font-size="13" font-weight="400" fill="#35413F" text-anchor="start" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">MongoDB time-series collection, expires after 48 hours</text>
+<text x="1730" y="1069" font-size="13" font-weight="400" fill="#56625F" text-anchor="end" font-family="'IBM Plex Sans','Segoe UI',Arial,Helvetica,sans-serif">PK primary key   FK foreign key</text>
+</svg>

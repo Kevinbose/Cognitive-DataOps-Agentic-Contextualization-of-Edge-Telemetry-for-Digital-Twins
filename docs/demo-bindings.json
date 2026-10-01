@@ -1,0 +1,48 @@
+{
+  "$comment": "Demo bindings for the car factory asset. meshName is the glTF node name exactly as it appears in the .glb, or null while the channel is not assigned. Fill it by hand, or make the bindings in the viewer and run `npm run seed:demo --workspace server -- --capture`. Replay with `--apply --bindings`.",
+  "assetName": "Car Factory, Assembly Hall",
+  "bindings": [
+    {
+      "sensorId": "ROBOT-WELD-01.AXIS_4_SERVO_TORQUE",
+      "sensorType": "torque",
+      "displayName": "Robot forearm (axis 4)",
+      "objectType": "Mesh",
+      "meshName": null
+    },
+    {
+      "sensorId": "ROBOT-WELD-01.TOOL_CENTER_POINT_DEVIATION",
+      "sensorType": "displacement",
+      "displayName": "Robot wrist and tool flange",
+      "objectType": "Mesh",
+      "meshName": null
+    },
+    {
+      "sensorId": "ROBOT-WELD-01.WELD_GUN_TEMP",
+      "sensorType": "temperature",
+      "displayName": "Spot weld gun",
+      "objectType": "Mesh",
+      "meshName": null
+    },
+    {
+      "sensorId": "PRESS-STAMP-01.MAIN_MOTOR_CURRENT",
+      "sensorType": "current",
+      "displayName": "Main drive motor",
+      "objectType": "Mesh",
+      "meshName": null
+    },
+    {
+      "sensorId": "PRESS-STAMP-01.LUBE_OIL_PRESSURE",
+      "sensorType": "pressure",
+      "displayName": "Lubrication unit",
+      "objectType": "Mesh",
+      "meshName": null
+    },
+    {
+      "sensorId": "PRESS-STAMP-01.BEARING_VIBRATION_RMS",
+      "sensorType": "vibration",
+      "displayName": "Main bearing housing",
+      "objectType": "Mesh",
+      "meshName": null
+    }
+  ]
+}

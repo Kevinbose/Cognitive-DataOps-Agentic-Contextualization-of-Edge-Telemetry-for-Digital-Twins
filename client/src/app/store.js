@@ -8,12 +8,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 
 import { apiSlice } from '../services/apiSlice.js';
+import telemetryReducer from '../features/telemetry/telemetrySlice.js';
 import twinViewerReducer from '../features/twin-viewer/twinViewerSlice.js';
 
 export const store = configureStore({
   reducer: {
     [apiSlice.reducerPath]: apiSlice.reducer,
     twinViewer: twinViewerReducer,
+    telemetry: telemetryReducer,
   },
 
   middleware: (getDefaultMiddleware) =>
@@ -36,6 +38,13 @@ export const store = configureStore({
           'meta.baseQueryMeta.request',
           'meta.baseQueryMeta.response',
         ],
+        // The live series and spectra are large, change four times a second and
+        // hold only numbers. The dev-only serialisability and immutability
+        // checks would walk them on every dispatch for no benefit.
+        ignoredPaths: ['telemetry.series', 'telemetry.spectra'],
+      },
+      immutableCheck: {
+        ignoredPaths: ['telemetry.series', 'telemetry.spectra'],
       },
     }).concat(apiSlice.middleware),
 

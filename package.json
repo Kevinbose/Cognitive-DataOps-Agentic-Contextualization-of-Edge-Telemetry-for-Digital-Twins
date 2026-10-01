@@ -2,11 +2,11 @@
   "name": "cognitive-dataops",
   "version": "0.1.0",
   "private": true,
-  "description": "Cognitive DataOps — Agentic Contextualization of Edge Telemetry for Digital Twins. Enterprise-grade digital twin asset pipeline and spatial sensor-mapping platform.",
+  "description": "Cognitive DataOps \u2014 Agentic Contextualization of Edge Telemetry for Digital Twins. Enterprise-grade digital twin asset pipeline and spatial sensor-mapping platform.",
   "type": "module",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=22.0.0",
     "npm": ">=10.0.0"
   },
   "workspaces": [

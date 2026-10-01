@@ -7,14 +7,16 @@
  * @module features/assets/pages/AssetUploadPage
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Button from '../../../components/ui/Button.jsx';
+import PageHeader from '../../../components/ui/PageHeader.jsx';
 import Panel from '../../../components/ui/Panel.jsx';
 import { ErrorState } from '../../../components/ui/Feedback.jsx';
 import { FileField, SelectField, TextField } from '../../../components/ui/Field.jsx';
 import { formatBytes } from '../../../lib/three-helpers.js';
+import { usePageTitle } from '../../../lib/usePageTitle.js';
 import { getErrorMessage } from '../../../services/apiSlice.js';
 import { useCreateAssetMutation, useUploadConvertedFileMutation } from '../assetsApiSlice.js';
 
@@ -30,6 +32,7 @@ const SOURCE_TYPES = [
  * @returns {import('react').JSX.Element}
  */
 export function AssetUploadPage() {
+  usePageTitle('Ingest asset');
   const navigate = useNavigate();
 
   const [createAsset, createState] = useCreateAssetMutation();
@@ -49,6 +52,35 @@ export function AssetUploadPage() {
   const isSubmitting = createState.isLoading || uploadState.isLoading;
 
   /**
+   * Warn before the tab is closed or reloaded while the form holds work.
+   *
+   * A chosen file cannot be restored by the browser, so losing the page to a
+   * stray back-swipe costs the operator a re-pick of a multi-megabyte model.
+   */
+  const isDirty = Boolean(name || uploader || notes || cadFile || meshFile);
+  useEffect(() => {
+    if (!isDirty || isSubmitting) return undefined;
+    /** @param {BeforeUnloadEvent} event */
+    const warn = (event) => {
+      event.preventDefault();
+      // Legacy browsers require a return value to show the prompt.
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty, isSubmitting]);
+
+  /**
+   * After a failed validation, move focus to the first invalid control, so a
+   * keyboard or screen-reader user lands on the problem instead of having to
+   * hunt for it.
+   */
+  useEffect(() => {
+    if (Object.keys(fieldErrors).length === 0) return;
+    document.querySelector('form [aria-invalid="true"]')?.focus();
+  }, [fieldErrors]);
+
+  /**
    * Validate before hitting the network, so obvious mistakes surface instantly
    * and every problem is reported at once rather than one per round trip.
    * @returns {boolean} Whether the form is valid.
@@ -60,7 +92,8 @@ export function AssetUploadPage() {
     if (!name.trim()) errors.name = 'Asset name is required.';
     if (!uploader.trim()) errors.uploader = 'Uploader name is required.';
     if (!cadFile && !meshFile) {
-      errors.meshFile = 'Provide at least one file — a source CAD file, a converted mesh, or both.';
+      errors.meshFile =
+        'Provide at least one file: a source CAD file, a converted mesh, or both.';
     }
     if (meshFile && !meshFile.name.toLowerCase().endsWith('.glb')) {
       errors.meshFile = 'The converted mesh must be a .glb file. Pack a .gltf + .bin pair first.';
@@ -101,17 +134,17 @@ export function AssetUploadPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h2 className="display-page text-ink">Ingest Asset</h2>
-        <p className="mt-2 max-w-2xl font-sans text-[13px] leading-relaxed text-ink-muted">
-          Raw CAD is retained for provenance and is never rendered — WebGL cannot draw parametric
-          geometry. The converted <span translate="no">.glb</span> is what the twin viewer loads.
+      <PageHeader title="Ingest asset">
+        <p className="max-w-2xl text-[14px] text-ink-muted">
+          Raw CAD is retained for provenance and is never rendered, because WebGL cannot draw
+          parametric geometry. The converted <span translate="no">.glb</span> is what the twin
+          viewer loads.
         </p>
-      </div>
+      </PageHeader>
 
       {submitError ? (
         <ErrorState
-          title="Ingestion Failed"
+          title="Ingestion failed"
           message={submitError}
           action={
             <Button size="sm" onClick={() => setSubmitError('')}>
@@ -126,12 +159,12 @@ export function AssetUploadPage() {
           <Panel title="Identification">
             <div className="grid gap-5 md:grid-cols-2">
               <TextField
-                label="Asset Name"
+                label="Asset name"
                 required
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 error={fieldErrors.name}
-                placeholder="e.g. Tool & Plant Hire Depot"
+                placeholder="e.g. Tool and plant hire depot"
                 autoComplete="off"
                 name="assetName"
               />
@@ -141,12 +174,14 @@ export function AssetUploadPage() {
                 value={uploader}
                 onChange={(event) => setUploader(event.target.value)}
                 error={fieldErrors.uploader}
-                placeholder="e.g. Kevin Bose J"
+                placeholder="Full name"
                 autoComplete="name"
                 name="uploader"
               />
               <SelectField
-                label="Source Format"
+                label="Source format"
+                name="sourceType"
+                autoComplete="off"
                 options={SOURCE_TYPES}
                 value={sourceType}
                 onChange={(event) => setSourceType(event.target.value)}
@@ -163,11 +198,12 @@ export function AssetUploadPage() {
             </div>
           </Panel>
 
-          <Panel title="File Artefacts">
+          <Panel title="File artefacts">
             <div className="space-y-5">
               <FileField
-                label="Source CAD — Provenance Only"
+                label="Source CAD (provenance only)"
                 accept=".stp,.step,.iges,.igs"
+                name="originalFile"
                 file={cadFile}
                 onFileChange={setCadFile}
                 error={fieldErrors.cadFile}
@@ -175,8 +211,9 @@ export function AssetUploadPage() {
               />
 
               <FileField
-                label="Converted Mesh — Rendered in the Viewer"
+                label="Converted mesh (rendered in the viewer)"
                 accept=".glb"
+                name="convertedFile"
                 file={meshFile}
                 onFileChange={setMeshFile}
                 error={fieldErrors.meshFile}
@@ -184,18 +221,14 @@ export function AssetUploadPage() {
               />
 
               {meshFile ? (
-                <dl className="flex gap-6 border border-line bg-sunken px-4 py-3">
+                <dl className="flex gap-8 border border-line bg-raised px-4 py-3">
                   <div>
-                    <dt className="label-micro">Mesh Size</dt>
-                    <dd className="data-readout mt-1 text-[13px] text-ink">
-                      {formatBytes(meshFile.size)}
-                    </dd>
+                    <dt className="label-text">Mesh size</dt>
+                    <dd className="data-readout mt-1 text-ink">{formatBytes(meshFile.size)}</dd>
                   </div>
                   <div className="min-w-0">
-                    <dt className="label-micro">Filename</dt>
-                    <dd className="data-readout mt-1 truncate text-[13px] text-ink">
-                      {meshFile.name}
-                    </dd>
+                    <dt className="label-text">Filename</dt>
+                    <dd className="data-readout mt-1 truncate text-ink">{meshFile.name}</dd>
                   </div>
                 </dl>
               ) : null}
@@ -207,9 +240,9 @@ export function AssetUploadPage() {
               Cancel
             </Button>
             {/* Stays enabled until the request actually starts, per the
-                guidelines — a pre-emptively disabled submit hides why. */}
+                guidelines: a pre-emptively disabled submit hides why. */}
             <Button type="submit" variant="primary" loading={isSubmitting} disabled={isSubmitting}>
-              Ingest Asset
+              Ingest asset
             </Button>
           </div>
         </div>

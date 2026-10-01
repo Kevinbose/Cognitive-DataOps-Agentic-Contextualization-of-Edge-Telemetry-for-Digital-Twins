@@ -52,9 +52,25 @@ import { createSlice } from '@reduxjs/toolkit';
  * @property {boolean} isMappingPanelOpen - Whether the inspector sidebar is shown.
  * @property {number} cameraResetNonce - Incremented to command a camera refit.
  *   A counter rather than a boolean so repeated resets always register.
+ * @property {{action: 'zoomIn'|'zoomOut'|'rotateLeft'|'rotateRight'|'focus'|null, meshName: string|null, nonce: number}} cameraCommand
+ *   A one-shot instruction from a toolbar button, or (later) the diagnosis agent.
+ *   Same counter trick as the reset: pressing "zoom in" twice must act twice,
+ *   which a plain string would not. `focus` frames one mesh and carries its name.
+ * @property {Record<string, Highlight[]>} highlights - Transient highlights per mesh name.
+ *   The compositor (`scene/highlightCompositor.js`) layers these with selection,
+ *   hover and live alarm state. Plain data: never a three.js object.
  * @property {boolean} showBlueprintGrid - Ground grid visibility.
  * @property {boolean} autoRotate - Slow turntable, for idle presentation.
  * @property {string} meshFilter - Search text for the mesh picker.
+ */
+
+/**
+ * One transient highlight on a mesh.
+ *
+ * @typedef {object} Highlight
+ * @property {string} id - Unique, so a newer highlight is never removed by an older timer.
+ * @property {'flash'|'agent'} source - Who asked for it. Drives priority.
+ * @property {boolean} pulse - Whether it pulses (steady under reduced motion).
  */
 
 /** @type {TwinViewerState} */
@@ -65,6 +81,8 @@ const initialState = {
   isModelLoaded: false,
   isMappingPanelOpen: true,
   cameraResetNonce: 0,
+  cameraCommand: { action: null, meshName: null, nonce: 0 },
+  highlights: {},
   showBlueprintGrid: true,
   autoRotate: false,
   meshFilter: '',
@@ -135,6 +153,48 @@ const twinViewerSlice = createSlice({
       state.cameraResetNonce += 1;
     },
 
+    /**
+     * Nudge the camera from a toolbar button. Consumed inside `<Canvas>` by
+     * `CameraCommands`. This gives every orbit gesture a click and keyboard
+     * alternative, which a drag-only control does not have.
+     *
+     * @param {TwinViewerState} state
+     * @param {{payload: 'zoomIn'|'zoomOut'|'rotateLeft'|'rotateRight'|{action: 'focus', meshName: string}}} action
+     */
+    requestCameraCommand(state, action) {
+      const command =
+        typeof action.payload === 'string'
+          ? { action: action.payload, meshName: null }
+          : { action: action.payload.action, meshName: action.payload.meshName };
+      state.cameraCommand = { ...command, nonce: state.cameraCommand.nonce + 1 };
+    },
+
+    /**
+     * Add a highlight to a mesh. Prefer the `flashMesh` thunk, which also
+     * schedules its removal.
+     *
+     * @param {TwinViewerState} state
+     * @param {{payload: {meshName: string, highlight: Highlight}}} action
+     */
+    highlightAdded(state, action) {
+      const { meshName, highlight } = action.payload;
+      (state.highlights[meshName] ??= []).push(highlight);
+    },
+
+    /**
+     * Remove ONE highlight by id. Matching on the id (not the mesh) is what stops
+     * an old timer from clearing a highlight that replaced it.
+     *
+     * @param {TwinViewerState} state
+     * @param {{payload: {meshName: string, id: string}}} action
+     */
+    highlightRemoved(state, action) {
+      const { meshName, id } = action.payload;
+      const remaining = (state.highlights[meshName] ?? []).filter((item) => item.id !== id);
+      if (remaining.length > 0) state.highlights[meshName] = remaining;
+      else delete state.highlights[meshName];
+    },
+
     /** @param {TwinViewerState} state */
     toggleBlueprintGrid(state) {
       state.showBlueprintGrid = !state.showBlueprintGrid;
@@ -186,6 +246,7 @@ const twinViewerSlice = createSlice({
       state.meshFilter = '';
       state.isMappingPanelOpen = true;
       state.autoRotate = false;
+      state.highlights = {};
     },
   },
 });
@@ -198,6 +259,9 @@ export const {
   clearDiscoveredMeshes,
   toggleMappingPanel,
   requestCameraReset,
+  requestCameraCommand,
+  highlightAdded,
+  highlightRemoved,
   toggleBlueprintGrid,
   toggleAutoRotate,
   setMeshFilter,
@@ -221,10 +285,41 @@ export const selectIsMappingPanelOpen = (state) => state.twinViewer.isMappingPan
 /** @param {{twinViewer: TwinViewerState}} state */
 export const selectCameraResetNonce = (state) => state.twinViewer.cameraResetNonce;
 /** @param {{twinViewer: TwinViewerState}} state */
+export const selectCameraCommand = (state) => state.twinViewer.cameraCommand;
+/** @param {{twinViewer: TwinViewerState}} state */
+export const selectHighlights = (state) => state.twinViewer.highlights;
+/** @param {{twinViewer: TwinViewerState}} state */
 export const selectShowBlueprintGrid = (state) => state.twinViewer.showBlueprintGrid;
 /** @param {{twinViewer: TwinViewerState}} state */
 export const selectAutoRotate = (state) => state.twinViewer.autoRotate;
 /** @param {{twinViewer: TwinViewerState}} state */
 export const selectMeshFilter = (state) => state.twinViewer.meshFilter;
+
+/** How long the bind confirmation flash lasts. */
+export const FLASH_DURATION_MS = 1600;
+
+let nextHighlightId = 1;
+
+/**
+ * Flash a mesh green to confirm a bind.
+ *
+ * Adds a highlight and schedules exactly that highlight's removal. The timer
+ * removes by id, so binding the same mesh again inside the window cannot be
+ * cut short by the first flash's timer.
+ *
+ * @param {string} meshName - Raw glTF mesh name.
+ * @param {number} [durationMs]
+ * @returns {(dispatch: Function) => string} A thunk; resolves to the highlight id.
+ */
+export const flashMesh =
+  (meshName, durationMs = FLASH_DURATION_MS) =>
+  (dispatch) => {
+    const id = `flash-${nextHighlightId}`;
+    nextHighlightId += 1;
+
+    dispatch(highlightAdded({ meshName, highlight: { id, source: 'flash', pulse: false } }));
+    setTimeout(() => dispatch(highlightRemoved({ meshName, id })), durationMs);
+    return id;
+  };
 
 export default twinViewerSlice.reducer;

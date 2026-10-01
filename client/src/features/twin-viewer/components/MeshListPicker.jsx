@@ -1,7 +1,7 @@
 /**
  * @file Searchable list of meshes discovered in the loaded scene.
  *
- * Search is load-bearing, not polish: the real sample assets contain 800–1,200
+ * Search is load-bearing, not polish: the real sample assets contain 800-1,200
  * nodes with machine-generated names. An unfiltered list is unusable, and
  * rendering every row at once would stall the main thread.
  *
@@ -11,6 +11,8 @@
 import { useDeferredValue, useMemo } from 'react';
 
 import { useAppDispatch, useAppSelector } from '../../../app/hooks.js';
+import { LoadingState } from '../../../components/ui/Feedback.jsx';
+import { SearchField } from '../../../components/ui/Field.jsx';
 import {
   selectDiscoveredMeshes,
   selectMesh,
@@ -53,86 +55,68 @@ export function MeshListPicker({ registeredByName }) {
   }, [meshes, deferredFilter]);
 
   return (
-    <div className="flex min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="border-b border-line p-3">
-        <label htmlFor="mesh-filter" className="sr-only">
-          Filter components by name
-        </label>
-        <input
-          id="mesh-filter"
-          type="search"
+        <SearchField
+          label="Filter components by name"
           value={filter}
-          onChange={(event) => dispatch(setMeshFilter(event.target.value))}
+          onValueChange={(value) => dispatch(setMeshFilter(value))}
           placeholder="Filter components…"
-          spellCheck={false}
-          className="min-h-9 w-full rounded-md border border-line bg-sunken px-3 font-sans text-[12.5px] text-ink placeholder:text-ink-subtle transition-[background-color,border-color,box-shadow] duration-150 focus:border-primary focus:bg-surface focus:shadow-focus focus:outline-none"
+          name="componentFilter"
         />
-        <p className="mt-2 font-sans text-[11px] text-ink-muted" aria-live="polite">
+        <p className="mt-2 text-xs text-ink-muted" aria-live="polite">
           {totalMatches.toLocaleString()} component{totalMatches === 1 ? '' : 's'}
-          {totalMatches > MAX_VISIBLE ? ` · showing ${MAX_VISIBLE}` : ''}
+          {totalMatches > MAX_VISIBLE ? `, showing ${MAX_VISIBLE}` : ''}
         </p>
       </div>
 
-      <ul className="min-h-0 flex-1 overflow-y-auto p-1.5">
-        {visible.map((mesh) => {
-          const registered = registeredByName.get(mesh.name);
-          const isSelected = selectedMeshName === mesh.name;
+      {meshes.length === 0 ? (
+        <LoadingState variant="list" label="Waiting for geometry…" />
+      ) : (
+        <ul className="min-h-0 flex-1 overflow-y-auto p-1.5">
+          {visible.map((mesh) => {
+            const registered = registeredByName.get(mesh.name);
+            const isSelected = selectedMeshName === mesh.name;
 
-          return (
-            <li key={mesh.name}>
-              <button
-                type="button"
-                onClick={() => dispatch(selectMesh(mesh.name))}
-                aria-current={isSelected ? 'true' : undefined}
-                className={[
-                  'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left',
-                  'transition-[background-color,color] duration-150',
-                  isSelected
-                    ? 'bg-signal-soft text-signal'
-                    : 'text-ink-secondary hover:bg-sunken hover:text-ink',
-                ].join(' ')}
-              >
-                <span
-                  aria-hidden="true"
+            return (
+              <li key={mesh.name}>
+                <button
+                  type="button"
+                  onClick={() => dispatch(selectMesh(mesh.name))}
+                  aria-current={isSelected ? 'true' : undefined}
                   className={[
-                    'h-1.5 w-1.5 shrink-0 rounded-full',
-                    registered?.isMapped
-                      ? 'bg-success'
-                      : isSelected
-                        ? 'bg-signal'
-                        : 'bg-line-strong',
+                    'block w-full px-3 py-2 text-left',
+                    isSelected
+                      ? 'bg-primary text-ink-inverse'
+                      : 'text-ink-secondary hover:bg-sunken hover:text-ink',
                   ].join(' ')}
-                />
-
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-mono text-[11.5px]">
+                >
+                  <span className="block truncate font-mono text-xs">
                     {registered?.displayName || mesh.name}
                   </span>
+                  {/* A bound component shows its sensor id on a second line.
+                      The text IS the marker: no decorative dot. */}
                   {registered?.activeBinding ? (
-                    <span className="mt-0.5 block truncate font-mono text-[10.5px] text-success">
+                    <span
+                      className={`mt-0.5 block truncate font-mono text-xs ${
+                        isSelected ? 'text-ink-inverse' : 'text-ink'
+                      }`}
+                    >
                       {registered.activeBinding.sensorId}
                     </span>
                   ) : null}
-                </span>
-              </button>
+                </button>
+              </li>
+            );
+          })}
+
+          {visible.length === 0 ? (
+            <li className="px-3 py-10 text-center">
+              <p className="text-[13px] text-ink-muted">No component matches “{filter}”.</p>
             </li>
-          );
-        })}
-
-        {meshes.length > 0 && visible.length === 0 ? (
-          <li className="px-3 py-10 text-center">
-            <p className="font-sans text-[12.5px] text-ink-muted">
-              No component matches “{filter}”.
-            </p>
-          </li>
-        ) : null}
-
-        {meshes.length === 0 ? (
-          <li className="px-3 py-10 text-center">
-            <p className="font-sans text-[12.5px] text-ink-muted">Waiting for geometry…</p>
-          </li>
-        ) : null}
-      </ul>
+          ) : null}
+        </ul>
+      )}
     </div>
   );
 }

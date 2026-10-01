@@ -1,0 +1,109 @@
+{
+  "$comment": "Single source of truth for the telemetry channel catalog. Generated into firmware/cdo-edge-gateway/catalog.h by scripts/gen-catalog.mjs, read by the backend simulator, and asserted against the simulator's birth message by a backend test, so the C++ and JavaScript sides cannot drift. Limits are illustrative constants chosen for the demo, not vendor values.",
+  "contractVersion": 1,
+  "defaultSiteId": "vit-lab",
+  "selftest": {
+    "$comment": "Fixed-seed parity plan. The firmware (scripts/fw.mjs selftest) prints the model output for every case below and the host compares it with the JavaScript models. Robot times straddle the weld window (4.4 to 6.0 s of the 8 s cycle); press times include a sample inside the working stroke (38 to 60 percent of 4.6 s).",
+    "seed": 4242,
+    "ramps": [0, 0.25, 0.5, 0.75, 1],
+    "times": {
+      "robot": [4, 4.5, 5, 5.5, 6, 6.5],
+      "press": [10, 11.6]
+    }
+  },
+  "machines": {
+    "robot-weld-01": {
+      "typeCode": 1,
+      "machineType": "robot",
+      "label": "Welding robot 01",
+      "area": "Body shop",
+      "intervalMs": 500,
+      "sim": { "cycleSec": 8 },
+      "scenarios": ["NORMAL", "GEARBOX_WEAR"],
+      "channels": [
+        {
+          "key": "AXIS_4_SERVO_TORQUE",
+          "label": "Axis 4 servo torque",
+          "unit": "Nm",
+          "sensorType": "torque",
+          "min": 0,
+          "max": 45,
+          "decimals": 1,
+          "limits": { "warnHigh": 26, "alarmHigh": 30 }
+        },
+        {
+          "key": "TOOL_CENTER_POINT_DEVIATION",
+          "label": "Tool centre point deviation",
+          "unit": "mm",
+          "sensorType": "displacement",
+          "min": 0,
+          "max": 2,
+          "decimals": 3,
+          "limits": { "warnHigh": 0.25, "alarmHigh": 0.5 }
+        },
+        {
+          "key": "WELD_GUN_TEMP",
+          "label": "Weld gun temperature",
+          "unit": "degC",
+          "sensorType": "temperature",
+          "min": 20,
+          "max": 140,
+          "decimals": 1,
+          "limits": { "warnHigh": 85, "alarmHigh": 105 }
+        }
+      ],
+      "spectrum": null
+    },
+    "press-stamp-01": {
+      "typeCode": 2,
+      "machineType": "press",
+      "label": "Stamping press 01",
+      "area": "Press shop",
+      "intervalMs": 500,
+      "sim": { "cycleSec": 4.6 },
+      "scenarios": ["NORMAL", "CLOGGED_FILTER", "BEARING_WEAR"],
+      "channels": [
+        {
+          "key": "MAIN_MOTOR_CURRENT",
+          "label": "Main motor current",
+          "unit": "A",
+          "sensorType": "current",
+          "min": 0,
+          "max": 250,
+          "decimals": 1,
+          "limits": { "warnHigh": 175, "alarmHigh": 195 }
+        },
+        {
+          "key": "LUBE_OIL_PRESSURE",
+          "label": "Lube oil pressure",
+          "unit": "bar",
+          "sensorType": "pressure",
+          "min": 0,
+          "max": 8,
+          "decimals": 2,
+          "limits": { "warnLow": 3.6, "alarmLow": 3.0 }
+        },
+        {
+          "key": "BEARING_VIBRATION_RMS",
+          "label": "Bearing vibration RMS",
+          "unit": "mm/s",
+          "sensorType": "vibration",
+          "min": 0,
+          "max": 12,
+          "decimals": 2,
+          "limits": { "warnHigh": 2.5, "alarmHigh": 4.0 }
+        }
+      ],
+      "spectrum": {
+        "key": "BEARING_SPECTRUM",
+        "label": "Bearing vibration spectrum",
+        "unit": "mm/s",
+        "startHz": 0,
+        "stepHz": 12.5,
+        "count": 64,
+        "intervalMs": 2000,
+        "fundamentalHz": 24.7
+      }
+    }
+  }
+}

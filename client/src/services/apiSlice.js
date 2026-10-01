@@ -43,7 +43,7 @@ export function getErrorMessage(error) {
 
   if (data?.errors?.length) {
     // Field errors are more actionable than the generic wrapper message.
-    return data.errors.map((issue) => `${issue.field}: ${issue.message}`).join(' · ');
+    return data.errors.map((issue) => `${issue.field}: ${issue.message}`).join('; ');
   }
   if (data?.message) return data.message;
 
@@ -72,7 +72,7 @@ export const apiSlice = createApi({
    * one tag, and the sidebar, 3D highlight, and stats all re-derive from the
    * refetched payload. No manual cache patching anywhere in the app.
    */
-  tagTypes: ['Asset', 'TwinScene'],
+  tagTypes: ['Asset', 'TwinScene', 'Sim'],
 
   // Refetch when the user returns to the tab — an operator leaving a twin open
   // on a second monitor should not be looking at an hour-old mapping table.

@@ -6,11 +6,15 @@
   "type": "module",
   "main": "src/server.js",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "test": "node --import ./test/setup.js --test \"test/**/*.test.js\"",
+    "simulate": "node scripts/simulate-devices.mjs",
+    "tail": "node scripts/mqtt-tail.mjs",
+    "seed:demo": "node scripts/seed-demo.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -19,7 +23,13 @@
     "helmet": "^8.0.0",
     "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
+    "mqtt": "^5.16.0",
     "multer": "^2.0.1",
+    "socket.io": "^4.8.4",
     "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "aedes": "^1.2.0",
+    "socket.io-client": "^4.8.4"
   }
 }

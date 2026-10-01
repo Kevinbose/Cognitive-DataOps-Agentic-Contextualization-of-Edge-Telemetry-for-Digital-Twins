@@ -24,8 +24,13 @@ const { Schema, model } = mongoose;
  * Physical quantity a bound sensor measures.
  *
  * Values mirror the sensor kinds named in the project's own research notes
- * (temperature / vibration / rpm / pressure / current), plus a `generic` escape
- * hatch so an unanticipated sensor can still be mapped without a schema change.
+ * (temperature / vibration / rpm / pressure / current), plus `torque` and
+ * `displacement` for the welding robot's servo torque and tool-centre-point
+ * deviation, and a `generic` escape hatch so an unanticipated sensor can still
+ * be mapped without a schema change.
+ *
+ * The client does not keep its own copy of this list: `GET /api/v1/meta`
+ * serves it, so adding a value here is the only edit needed.
  *
  * @readonly
  * @enum {string}
@@ -36,6 +41,8 @@ export const SENSOR_TYPE = Object.freeze({
   RPM: 'rpm',
   PRESSURE: 'pressure',
   CURRENT: 'current',
+  TORQUE: 'torque',
+  DISPLACEMENT: 'displacement',
   GENERIC: 'generic',
 });
 

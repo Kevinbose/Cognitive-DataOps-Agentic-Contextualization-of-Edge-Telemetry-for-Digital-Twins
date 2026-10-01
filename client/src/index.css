@@ -1,120 +1,95 @@
 @import 'tailwindcss';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   COGNITIVE DATAOPS — DESIGN SYSTEM
-   "Precision Light" — a professional, colour-literate light theme for an
-   industrial telemetry console.
+   COGNITIVE DATAOPS, DESIGN SYSTEM v3
+   "Quiet chrome, loud content."
 
-   Rationale
-   ─────────
-   The first pass was pure Swiss Industrial Print: paper, black ink, one hazard
-   red. Technically disciplined, but austere — it read as a printed drawing
-   rather than a product someone spends eight hours a day inside.
+   The interface frames a colourful 3D model, so the frame is deliberately
+   mineral: warm-neutral greys, one petrol brand hue, and three state colours
+   that mean state and nothing else (the ISA-101 high-performance HMI idea).
+   Structure comes from ruled lines, a 2 px ink top rule and inverted-fill
+   selection, never from shadow, blur, gradient or rounded corners.
 
-   This system keeps the engineering rigour (dense data, monospace telemetry,
-   hairline structure, tabular numerals) and adds a real palette:
-
-     · A cool slate neutral ramp instead of paper-and-black. Slate reads
-       technical and lets colour sit on top without fighting it.
-     · A confident indigo primary for actions and navigation.
-     · A cyan "signal" accent reserved for live telemetry and 3D selection —
-       the colour of data moving through the system.
-     · Full semantic set (success / warning / danger / info) so status is
-       legible at a glance instead of inferred from a single red.
-     · Soft, tinted elevation. Shadows are slate-hued, never black, so cards
-       lift off the canvas without muddying it.
-
-   Every foreground/background pair below is annotated with its measured WCAG
-   contrast ratio. Nothing ships under 4.5:1 for body text or 3:1 for UI.
+   Source of truth: DESIGN.md. Contrast for every pairing below is verified by
+   `node scripts/check-contrast.mjs`, which reads this block directly.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* ── Neutral ramp (cool slate) ──────────────────────────────────────────
-     The canvas is tinted, not white: a faint cool cast makes white surfaces
-     read as raised without needing a heavy shadow. */
-  --color-canvas: #f5f7fa;
-  --color-canvas-deep: #eef1f6;
-  --color-surface: #ffffff;
-  --color-sunken: #f1f4f9;
-  --color-overlay: #ffffff;
-
-  /* ── Text ───────────────────────────────────────────────────────────────
-     Contrast measured on --color-surface (#ffffff):
-       ink        #0f172a → 17.9:1  (AAA)
-       secondary  #334155 → 11.2:1  (AAA)
-       muted      #556274 →  7.0:1  (AA, all sizes)
-       subtle     #7b8798 →  4.0:1  (large text / non-text only) */
-  --color-ink: #0f172a;
-  --color-ink-secondary: #334155;
-  --color-ink-muted: #556274;
-  --color-ink-subtle: #7b8798;
-  --color-ink-inverse: #ffffff;
-
-  /* ── Primary — indigo. Navigation, primary actions, focus. ──────────────
-     #3538cd on white → 8.6:1 (AAA). White on #3538cd → 8.6:1. */
-  --color-primary: #3538cd;
-  --color-primary-hover: #2b2ea8;
-  --color-primary-active: #23257f;
-  --color-primary-soft: #eef0ff;
-  --color-primary-border: #c7cbfb;
-
-  /* ── Signal — cyan. Live telemetry, 3D selection, data emphasis. ────────
-     Deliberately distinct from primary: indigo means "you can click this",
-     cyan means "this is instrumented / carrying data".
-     #0e7490 on white → 5.1:1 (AA). */
-  --color-signal: #0e7490;
-  --color-signal-hover: #0b5f76;
-  --color-signal-soft: #e0f5fa;
-  --color-signal-border: #a7e0ee;
-
-  /* ── Semantics ──────────────────────────────────────────────────────────
-     Each has a soft tint for chip backgrounds and a saturated tone for the
-     text/indicator that sits on it, so status never relies on hue alone. */
-  --color-success: #0f7a4d; /* on white → 5.2:1 */
-  --color-success-soft: #e3f7ed;
-  --color-success-border: #a8e6c7;
-
-  --color-warning: #a25b00; /* on white → 5.0:1 */
-  --color-warning-soft: #fdf2dd;
-  --color-warning-border: #f2d09a;
-
-  --color-danger: #c0202d; /* on white → 5.9:1 */
-  --color-danger-hover: #9c1a25;
-  --color-danger-soft: #fdecee;
-  --color-danger-border: #f5bcc2;
+  /* ── Surfaces ───────────────────────────────────────────────────────────
+     `raised` is the lightest value in the system. There is no pure white. */
+  --color-canvas: #e7e8e4;
+  --color-surface: #f3f4f1;
+  --color-raised: #f9faf8;
+  --color-sunken: #dcded9;
+  /* Backdrop of the 3D viewport. The sample models are pale, so the stage is
+     a step darker than the panels around it. */
+  --color-stage: #d4d7d1;
 
   /* ── Structure ──────────────────────────────────────────────────────────
-     Two border weights: `line` for routine separation, `line-strong` when a
-     boundary needs to assert itself (table headers, active states). */
-  --color-line: #e2e8f0;
-  --color-line-strong: #cbd5e1;
+     `line` is decorative (table rules, panel edges). `control` is the border
+     of anything you operate (inputs, toggles, checkboxes) and clears 3:1
+     against every surface, as WCAG 1.4.11 requires of a control boundary. */
+  --color-line: #babeb6;
+  --color-control: #777d74;
 
-  /* ── Typography ─────────────────────────────────────────────────────────
-     IBM Plex throughout. Sans for interface and display, Mono for every
-     identifier, count, coordinate, and telemetry value. One family, two
-     voices — cohesive without being monotonous. */
-  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-display: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+  /* ── Text ───────────────────────────────────────────────────────────────
+     ink, secondary and muted are text colours. `ink-subtle` is NON-TEXT only
+     (a disabled mark, an inner divider); it does not reach 4.5:1. */
+  --color-ink: #151d1c;
+  --color-ink-secondary: #35413f;
+  --color-ink-muted: #56625f;
+  --color-ink-subtle: #737e79;
+  --color-ink-inverse: #f9faf8;
 
-  /* ── Geometry ───────────────────────────────────────────────────────────
-     A restrained 6px base. Enough to feel considered and modern; far short of
-     the pill shapes that would make an operations console look consumer. */
-  --radius-xs: 3px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
+  /* ── Brand, petrol ──────────────────────────────────────────────────────
+     Actions, selection, focus. Nothing else carries this hue. */
+  --color-primary: #135e66;
+  --color-primary-hover: #0e4950;
+  --color-primary-active: #0a363b;
 
-  /* ── Elevation ──────────────────────────────────────────────────────────
-     Slate-tinted, never black. A pure-black shadow on a cool canvas turns
-     grey and dirty; tinting it to the surrounding hue keeps it clean. */
-  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
-  --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.04);
-  --shadow-md: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.04);
-  --shadow-lg: 0 12px 28px -6px rgb(15 23 42 / 0.12), 0 4px 8px -4px rgb(15 23 42 / 0.06);
-  --shadow-focus: 0 0 0 3px rgb(53 56 205 / 0.16);
+  /* ── State ──────────────────────────────────────────────────────────────
+     Alarm and warn are hard to tell apart under deuteranopia, so state is
+     always carried by SHAPE and TEXT as well: ring offline, dot normal,
+     triangle warn, square alarm. */
+  --color-danger: #b3261e;
+  --color-danger-hover: #8f1d17;
+  --color-warning: #8c5300;
+  --color-success: #1b6a39;
+  --color-success-shape: #208d3f;
+  /* The 3D bind flash. An emissive colour, never a UI colour. */
+  --color-flash: #24a148;
+
+  /* ── Type ───────────────────────────────────────────────────────────────
+     Archivo (semi-expanded) for page titles and static figures only. IBM Plex
+     Sans for the interface, IBM Plex Mono for every identifier and every
+     number that changes: Archivo's tabular figures differ in width by weight,
+     so a ticking value in it would jitter. All three are self-hosted. */
+  --font-display: 'Archivo Variable', 'Archivo', 'Arial Nova', 'Segoe UI', system-ui, sans-serif;
+  --font-sans:
+    'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  --font-mono:
+    'IBM Plex Mono', ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, Menlo, monospace;
+
+  /* ── Geometry and elevation ─────────────────────────────────────────────
+     Square corners and no shadows, everywhere. `rounded-full` is not
+     token-driven and is allowed only on the small circular state markers. */
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 0 #0000;
+  --shadow-xl: 0 0 #0000;
+  --shadow-2xl: 0 0 #0000;
+  --shadow-focus: 0 0 #0000;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -128,7 +103,10 @@
 
   html {
     scroll-behavior: smooth;
-    /* Removes the 300ms double-tap zoom delay on touch. */
+    /* The header is sticky; without this an in-page anchor scrolls its target
+       underneath it. */
+    scroll-padding-top: 5rem;
+    /* Removes the 300 ms double-tap zoom delay on touch. */
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
@@ -138,67 +116,53 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 14px;
-    line-height: 1.55;
+    line-height: 20px;
+    /* The bundled faces are the only faces: a browser must not fake a bold or
+       an italic that Plex was not drawn with. */
+    font-synthesis: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /*
-    Ambient depth. Two very wide, very faint radial washes — indigo top-left,
-    cyan top-right — so the canvas has a subtle sense of light falling across
-    it rather than reading as flat grey. Fixed and non-interactive.
-  */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-      radial-gradient(1200px 600px at 12% -8%, rgb(53 56 205 / 0.05), transparent 60%),
-      radial-gradient(1000px 500px at 92% -4%, rgb(14 116 144 / 0.045), transparent 62%);
-  }
-
   /* Visible keyboard focus on everything interactive. `:focus-visible` so a
-     mouse click does not leave a ring, but tabbing always shows position. */
-  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+     mouse click leaves no ring but tabbing always shows position. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
-    border-radius: var(--radius-sm);
   }
 
-  /* Digits must align vertically — this is a console full of scanned numbers. */
+  /* Digits must align vertically: this is a console full of scanned numbers. */
   :where(table, .tabular) {
     font-variant-numeric: tabular-nums;
   }
 
   :where(h1, h2, h3, h4) {
     text-wrap: balance;
-    letter-spacing: -0.018em;
+  }
+
+  :where(p, li, dd) {
+    text-wrap: pretty;
   }
 
   ::selection {
-    background-color: var(--color-primary-soft);
-    color: var(--color-primary-active);
+    background-color: var(--color-primary);
+    color: var(--color-ink-inverse);
   }
 
-  /* Slim, self-effacing scrollbars — a dense UI should not be framed in chrome. */
+  /* Square, self-effacing scrollbars: a dense UI should not be framed in chrome. */
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--color-line-strong);
-    border: 3px solid transparent;
-    background-clip: content-box;
-    border-radius: 9999px;
+    background: var(--color-control);
+    border: 3px solid var(--color-surface);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-ink-subtle);
-    background-clip: content-box;
+    background: var(--color-ink-muted);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -214,81 +178,126 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   PRIMITIVES
+   TYPE ROLES
+   Scale (px, line height): figure 40/44, page title 28/32, section 16/24,
+   body 14/20, table 13/18, label 12/16, data 13/18. Nothing is set below 12.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer components {
-  /* Small uppercase monospace label. Every field label, column header, and
-     unit caption in the console. */
-  .label-micro {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
+  /* Page title. Archivo, semi-expanded. */
+  .display-page {
+    font-family: var(--font-display);
+    font-stretch: 112.5%;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 32px;
+    color: var(--color-ink);
+  }
+
+  /* A large STATIC figure (a count that does not tick). */
+  .display-figure {
+    font-family: var(--font-display);
+    font-stretch: 112.5%;
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 44px;
+    color: var(--color-ink);
+  }
+
+  /* Panel and section heading. */
+  .display-section {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+    color: var(--color-ink);
+  }
+
+  /* Field labels, column headers, captions. Sentence case, never a shouting
+     monospace micro-label. */
+  .label-text {
+    font-family: var(--font-sans);
+    font-size: 12px;
     font-weight: 500;
-    line-height: 1.3;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    line-height: 16px;
     color: var(--color-ink-muted);
   }
 
-  /* Page title. */
-  .display-page {
-    font-family: var(--font-display);
-    font-size: clamp(1.5rem, 2.6vw, 1.95rem);
-    font-weight: 600;
-    line-height: 1.15;
-    letter-spacing: -0.025em;
-    color: var(--color-ink);
-  }
-
-  /* Panel / section heading. */
-  .display-section {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: -0.005em;
-    color: var(--color-ink);
-  }
-
-  /* Any value the operator reads as data. */
+  /* Any value the operator reads as data, and every identifier. */
   .data-readout {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
+    font-size: 13px;
+    line-height: 18px;
   }
 
-  /* Large metric figure. */
-  .metric-figure {
-    font-family: var(--font-display);
-    font-size: 30px;
+  /* A line ruled in ink, the top edge of a stat strip or a section. */
+  .rule-ink {
+    border-top: 2px solid var(--color-ink);
+  }
+
+  /* Backdrop of the 3D viewport. */
+  .stage {
+    background-color: var(--color-stage);
+  }
+
+  /* Loading placeholder: a static bar that only changes opacity, sized to the
+     content it stands in for. No shimmer gradient. */
+  .skeleton {
+    display: block;
+    background-color: var(--color-sunken);
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+
+  /* Long-form reading (terms, privacy). 16/26 body at about 65 characters a
+     line. Headings are sentence case and ruled, not decorated. */
+  .legal-prose h2 {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-line);
+    font-size: 20px;
     font-weight: 600;
-    line-height: 1;
-    letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums;
+    line-height: 28px;
     color: var(--color-ink);
   }
-
-  /* Engineering lattice behind the 3D viewport, so empty space still reads as
-     measured volume rather than dead area. */
-  .blueprint-grid {
-    background-color: var(--color-canvas-deep);
-    background-image:
-      linear-gradient(to right, rgb(15 23 42 / 0.045) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(15 23 42 / 0.045) 1px, transparent 1px),
-      linear-gradient(to right, rgb(15 23 42 / 0.025) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(15 23 42 / 0.025) 1px, transparent 1px);
-    background-size:
-      96px 96px,
-      96px 96px,
-      16px 16px,
-      16px 16px;
+  .legal-prose h2:first-of-type {
+    margin-top: 32px;
   }
-
-  /* Card surface. The default container for everything. */
-  .card {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
+  .legal-prose p,
+  .legal-prose li {
+    max-width: 65ch;
+    font-size: 16px;
+    line-height: 26px;
+    color: var(--color-ink-secondary);
+  }
+  .legal-prose p {
+    margin-top: 12px;
+  }
+  .legal-prose ul {
+    margin-top: 12px;
+    padding-left: 20px;
+    list-style: disc;
+  }
+  .legal-prose li + li {
+    margin-top: 6px;
+  }
+  .legal-prose a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .legal-prose strong {
+    font-weight: 600;
+    color: var(--color-ink);
   }
 }

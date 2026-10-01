@@ -12,6 +12,7 @@
 import { MeshNode } from '../models/MeshNode.model.js';
 import { SensorBinding } from '../models/SensorBinding.model.js';
 import { ApiError } from '../utils/ApiError.js';
+import { DOMAIN_EVENT, emitDomainEvent } from '../utils/domainEvents.js';
 
 /**
  * Fetch a live mesh node by id, or throw a 404.
@@ -170,6 +171,13 @@ export async function updateMeshNode(meshNodeId, patch) {
   if (patch.nodePath !== undefined) meshNode.nodePath = patch.nodePath;
 
   await meshNode.save();
+
+  // A label edit changes what the binding index and other open viewers show.
+  emitDomainEvent(DOMAIN_EVENT.BINDING_CHANGED, {
+    assetIds: [String(meshNode.assetId)],
+    reason: 'label',
+  });
+
   return meshNode;
 }
 
@@ -194,6 +202,11 @@ export async function softDeleteMeshNode(meshNodeId) {
 
   meshNode.isMapped = false;
   await meshNode.softDelete();
+
+  emitDomainEvent(DOMAIN_EVENT.BINDING_CHANGED, {
+    assetIds: [String(meshNode.assetId)],
+    reason: 'mesh-node-deleted',
+  });
 
   return { meshNodeId: meshNode.id, bindingsClosed: result.modifiedCount ?? 0 };
 }

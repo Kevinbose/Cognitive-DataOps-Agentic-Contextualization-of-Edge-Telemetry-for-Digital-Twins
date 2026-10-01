@@ -21,6 +21,7 @@ import { STORAGE_ROOT } from './config/storage.config.js';
 import { errorHandler } from './middleware/errorHandler.middleware.js';
 import { notFoundHandler } from './middleware/notFound.middleware.js';
 import { apiRouter } from './routes/index.js';
+import { ApiError } from './utils/ApiError.js';
 
 /**
  * Build the configured Express application.
@@ -54,7 +55,9 @@ export function createApp() {
 
         if (config.corsOrigins.includes(origin)) return callback(null, true);
 
-        return callback(new Error(`Origin "${origin}" is not allowed by CORS policy`));
+        // A 403, not a bare Error: a foreign origin is a client problem, and an
+        // Error would surface as a logged 500 "unexpected error".
+        return callback(ApiError.forbidden(`Origin "${origin}" is not allowed by CORS policy`));
       },
       credentials: true,
     }),

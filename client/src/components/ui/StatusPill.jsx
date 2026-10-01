@@ -1,9 +1,13 @@
 /**
- * @file Status and label chips.
+ * @file Asset status and label chips.
  *
- * Each status carries a tinted background, a matching border, a saturated dot,
- * AND a text label. Four redundant channels, so the state is legible to someone
- * who cannot distinguish the hues — colour is never the sole carrier of meaning.
+ * An asset moves along a one-way ratchet: `pending_conversion`, `converted`,
+ * `mapped`. The status is drawn as exactly that: three segments, filled from
+ * the left as far as the asset has got, followed by the plain-text name. Shape
+ * and text carry the meaning; hue carries none of it, so it reads the same to
+ * someone who cannot tell colours apart.
+ *
+ * (The filename is historical; the component is no longer a pill.)
  *
  * @module components/ui/StatusPill
  */
@@ -11,33 +15,47 @@
 /**
  * @typedef {object} Presentation
  * @property {string} label
- * @property {string} classes - Background, border, and text colour.
- * @property {string} dot - Indicator colour.
+ * @property {number} filled - Segments filled, 0 to 3.
+ * @property {boolean} [failed]
  */
 
 /** @type {Record<string, Presentation>} */
 const STATUS = {
-  pending_conversion: {
-    label: 'Pending Conversion',
-    classes: 'bg-sunken border-line text-ink-secondary',
-    dot: 'bg-ink-subtle',
-  },
-  converted: {
-    label: 'Converted',
-    classes: 'bg-signal-soft border-signal-border text-signal',
-    dot: 'bg-signal',
-  },
-  mapped: {
-    label: 'Instrumented',
-    classes: 'bg-success-soft border-success-border text-success',
-    dot: 'bg-success',
-  },
-  failed: {
-    label: 'Failed',
-    classes: 'bg-danger-soft border-danger-border text-danger',
-    dot: 'bg-danger',
-  },
+  pending_conversion: { label: 'Pending conversion', filled: 1 },
+  converted: { label: 'Converted', filled: 2 },
+  mapped: { label: 'Instrumented', filled: 3 },
+  failed: { label: 'Failed', filled: 0, failed: true },
 };
+
+/**
+ * The three-segment ratchet glyph.
+ *
+ * @param {object} props
+ * @param {number} props.filled - Segments filled, 0 to 3.
+ * @param {boolean} [props.failed] - Draw the segments as a failure.
+ * @returns {import('react').JSX.Element}
+ */
+export function RatchetGlyph({ filled, failed = false }) {
+  return (
+    <span aria-hidden="true" className="inline-flex shrink-0 items-center gap-0.5">
+      {[0, 1, 2].map((index) => {
+        const on = index < filled;
+        return (
+          <span
+            key={index}
+            className={`block h-2.5 w-3.5 border ${
+              failed
+                ? 'border-danger'
+                : on
+                  ? 'border-ink bg-ink'
+                  : 'border-control bg-transparent'
+            }`}
+          />
+        );
+      })}
+    </span>
+  );
+}
 
 /**
  * @param {object} props
@@ -48,16 +66,15 @@ const STATUS = {
 export function StatusPill({ status, className = '' }) {
   const presentation = STATUS[status] ?? {
     label: String(status).replace(/_/g, ' '),
-    classes: 'bg-sunken border-line text-ink-secondary',
-    dot: 'bg-ink-subtle',
+    filled: 0,
   };
 
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${presentation.classes} ${className}`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${presentation.dot}`} aria-hidden="true" />
-      <span className="font-sans text-[11px] font-medium tracking-[-0.005em]">
+    <span className={`inline-flex items-center gap-2 ${className}`}>
+      <RatchetGlyph filled={presentation.filled} failed={presentation.failed} />
+      <span
+        className={`text-[13px] font-medium ${presentation.failed ? 'text-danger' : 'text-ink'}`}
+      >
         {presentation.label}
       </span>
     </span>
@@ -65,28 +82,20 @@ export function StatusPill({ status, className = '' }) {
 }
 
 /**
- * Neutral chip for non-status metadata (sensor type, source format, counts).
+ * Neutral boxed label for non-status metadata (sensor type, source format).
  *
  * @param {object} props
  * @param {import('react').ReactNode} props.children
- * @param {'neutral'|'primary'|'signal'} [props.tone]
  * @param {boolean} [props.mono]
  * @param {string} [props.className]
  * @returns {import('react').JSX.Element}
  */
-export function Tag({ children, tone = 'neutral', mono = false, className = '' }) {
-  /** @type {Record<string, string>} */
-  const tones = {
-    neutral: 'bg-sunken border-line text-ink-secondary',
-    primary: 'bg-primary-soft border-primary-border text-primary',
-    signal: 'bg-signal-soft border-signal-border text-signal',
-  };
-
+export function Tag({ children, mono = false, className = '' }) {
   return (
     <span
-      className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium ${
-        mono ? 'font-mono tracking-[-0.01em]' : 'font-sans'
-      } ${tones[tone]} ${className}`}
+      className={`inline-flex items-center border border-line bg-raised px-2 py-0.5 text-xs text-ink-secondary ${
+        mono ? 'font-mono' : 'font-sans font-medium'
+      } ${className}`}
     >
       {children}
     </span>

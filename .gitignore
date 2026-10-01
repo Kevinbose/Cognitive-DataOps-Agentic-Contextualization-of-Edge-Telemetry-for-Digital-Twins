@@ -53,8 +53,29 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 
-# Claude Code local tooling artifacts (skills are installed per-machine)
+# ─────────────────────────────────────────────────────────────────────────────
+# Firmware secrets and generated artefacts.
+# These rules MUST exist before any firmware file does: `secrets.h` holds Wi-Fi
+# and broker credentials, and `root_ca.h` is generated from the certificate
+# chain inspected at bring-up. Only `secrets.example.h` is committed.
+# ─────────────────────────────────────────────────────────────────────────────
+firmware/**/secrets.h
+firmware/**/root_ca.h
+firmware/.logs/
+firmware/.build/
+
+# Claude Code local tooling artifacts (skills are installed per-machine).
+# `.claude/*` rather than `.claude/` so individual files can be re-included:
+# git never descends into an excluded directory, so a file-level un-ignore
+# under `.claude/` would have no effect.
 skills-lock.json
 .agents/
-.claude/
-agent/
+.claude/*
+!.claude/settings.json
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/cdo-esp32-workflow/
+
+# Root-level `agent/` is a per-machine skill-install directory. Anchored so the
+# Phase 5 service at `services/agent/` is NOT swallowed by this rule.
+/agent/

@@ -82,6 +82,22 @@ export function sendCreated(res, data, message = 'Created') {
 }
 
 /**
+ * Send a `202 Accepted` success envelope.
+ *
+ * For work that has been handed off but not finished, such as a device command
+ * that is published and awaiting its acknowledgement.
+ *
+ * @template T
+ * @param {import('express').Response} res - Express response.
+ * @param {T} data - A handle for the pending work (for example a command id).
+ * @param {string} [message] - Summary message.
+ * @returns {import('express').Response} The response, for `return` chaining.
+ */
+export function sendAccepted(res, data, message = 'Accepted') {
+  return res.status(202).json(new ApiResponse(data, message));
+}
+
+/**
  * Build a {@link PaginationMeta} object from raw counts.
  *
  * @param {object} params

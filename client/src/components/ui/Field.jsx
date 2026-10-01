@@ -3,29 +3,68 @@
  *
  * Every control is label-bound via `htmlFor`/`id`, so clicking the label
  * focuses the input. Errors render inline and are wired through
- * `aria-describedby` + `aria-invalid`, so the failure is announced rather than
- * signalled by red text alone.
+ * `aria-describedby` and `aria-invalid`, so a failure is announced rather than
+ * signalled by colour alone. The error line also carries an icon and text, so
+ * it survives without hue.
+ *
+ * Controls are flat: a raised fill, a 1 px `control` border (3:1 against every
+ * surface), square corners. Focus is the global 2 px brand outline.
  *
  * @module components/ui/Field
  */
 
 import { useId } from 'react';
 
+import Icon from './Icon.jsx';
+import { CaretDown, MagnifyingGlass, UploadSimple, Warning } from './icons.js';
+
 /**
- * Shared control chrome: a sunken field that lifts to white on focus, with an
- * indigo ring. The lift is the affordance — the field looks *active*, not just
- * outlined.
+ * Shared control chrome.
  * @type {string}
  */
 const CONTROL = [
-  'w-full min-h-10 rounded-md border border-line bg-sunken px-3 py-2',
-  'font-sans text-[13px] text-ink',
-  'placeholder:text-ink-subtle',
-  'transition-[background-color,border-color,box-shadow] duration-150',
-  'focus:border-primary focus:bg-surface focus:outline-none focus:shadow-focus',
-  'disabled:cursor-not-allowed disabled:opacity-55',
-  'aria-[invalid=true]:border-danger aria-[invalid=true]:bg-danger-soft',
+  'w-full min-h-10 border border-control bg-raised px-3 py-2',
+  'font-sans text-[14px] text-ink',
+  'placeholder:text-ink-muted',
+  'focus:border-primary',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+  'aria-[invalid=true]:border-danger',
 ].join(' ');
+
+/**
+ * @param {object} props
+ * @param {string} props.id
+ * @param {string} props.children
+ * @param {boolean} [props.required]
+ * @returns {import('react').JSX.Element}
+ */
+function FieldLabel({ id, children, required = false }) {
+  return (
+    <label htmlFor={id} className="label-text mb-1.5 block text-ink-secondary">
+      {children}
+      {required ? (
+        <span className="ml-1 text-danger" aria-hidden="true">
+          *
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
+/**
+ * @param {object} props
+ * @param {string} props.id
+ * @param {string} props.children
+ * @returns {import('react').JSX.Element}
+ */
+function FieldError({ id, children }) {
+  return (
+    <p id={id} role="alert" className="mt-1.5 flex items-start gap-1.5 text-xs text-danger">
+      <Icon icon={Warning} size={14} className="mt-px" />
+      <span>{children}</span>
+    </p>
+  );
+}
 
 /**
  * @param {object} props
@@ -52,21 +91,13 @@ export function TextField({
 
   return (
     <div className={className}>
-      <label
-        htmlFor={id}
-        className="mb-1.5 block font-sans text-[12px] font-medium text-ink-secondary"
-      >
+      <FieldLabel id={id} required={required}>
         {label}
-        {required ? (
-          <span className="ml-1 text-danger" aria-hidden="true">
-            *
-          </span>
-        ) : null}
-      </label>
+      </FieldLabel>
 
       <input
         id={id}
-        className={`${CONTROL} ${mono ? 'font-mono tracking-[-0.01em]' : ''}`}
+        className={`${CONTROL} ${mono ? 'font-mono text-[13px]' : ''}`}
         required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : hint ? hintId : undefined}
@@ -74,21 +105,12 @@ export function TextField({
       />
 
       {hint && !error ? (
-        <p id={hintId} className="mt-1.5 font-sans text-[11.5px] leading-relaxed text-ink-muted">
+        <p id={hintId} className="mt-1.5 text-xs text-ink-muted">
           {hint}
         </p>
       ) : null}
 
-      {error ? (
-        <p
-          id={errorId}
-          role="alert"
-          className="mt-1.5 flex items-start gap-1.5 font-sans text-[11.5px] text-danger"
-        >
-          <span aria-hidden="true">⚠</span>
-          {error}
-        </p>
-      ) : null}
+      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
     </div>
   );
 }
@@ -96,23 +118,36 @@ export function TextField({
 /**
  * @param {object} props
  * @param {string} props.label
- * @param {Array<{value: string, label: string}>} props.options
+ * @param {Array<{value: string, label: string}>} [props.options] - Flat options.
+ * @param {Array<{label: string, options: Array<{value: string, label: string}>}>} [props.groups]
+ *   Grouped options, rendered as `<optgroup>`. Use either `options` or `groups`.
+ * @param {string} [props.placeholder] - Text of a leading empty option, when no choice is made yet.
  * @param {string} [props.hint]
+ * @param {string} [props.error]
+ * @param {boolean} [props.required]
  * @param {string} [props.className]
  * @returns {import('react').JSX.Element}
  */
-export function SelectField({ label, options, hint, className = '', ...rest }) {
+export function SelectField({
+  label,
+  options = [],
+  groups,
+  placeholder,
+  hint,
+  error,
+  required = false,
+  className = '',
+  ...rest
+}) {
   const id = useId();
   const hintId = `${id}-hint`;
+  const errorId = `${id}-error`;
 
   return (
     <div className={className}>
-      <label
-        htmlFor={id}
-        className="mb-1.5 block font-sans text-[12px] font-medium text-ink-secondary"
-      >
+      <FieldLabel id={id} required={required}>
         {label}
-      </label>
+      </FieldLabel>
 
       <div className="relative">
         {/*
@@ -121,29 +156,43 @@ export function SelectField({ label, options, hint, className = '', ...rest }) {
         */}
         <select
           id={id}
-          className={`${CONTROL} cursor-pointer appearance-none pr-9`}
-          aria-describedby={hint ? hintId : undefined}
+          className={`${CONTROL} cursor-pointer appearance-none pr-10`}
+          required={required}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : hint ? hintId : undefined}
           {...rest}
         >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
+          {placeholder ? <option value="">{placeholder}</option> : null}
+          {groups
+            ? groups.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))
+            : options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
         </select>
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-ink-muted"
-        >
-          ▼
-        </span>
+        <Icon
+          icon={CaretDown}
+          size={14}
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-secondary"
+        />
       </div>
 
-      {hint ? (
-        <p id={hintId} className="mt-1.5 font-sans text-[11.5px] text-ink-muted">
+      {hint && !error ? (
+        <p id={hintId} className="mt-1.5 text-xs text-ink-muted">
           {hint}
         </p>
       ) : null}
+
+      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
     </div>
   );
 }
@@ -153,7 +202,8 @@ export function SelectField({ label, options, hint, className = '', ...rest }) {
  *
  * The native input is visually hidden but stays in the accessibility tree and
  * focus order; a styled `<label>` fronts it. Full keyboard operation survives,
- * which a `<div>`-based dropzone would destroy.
+ * which a `<div>`-based dropzone would destroy. The group shows the focus ring
+ * when the hidden input is focused from the keyboard.
  *
  * @param {object} props
  * @param {string} props.label
@@ -163,33 +213,35 @@ export function SelectField({ label, options, hint, className = '', ...rest }) {
  * @param {string} [props.hint]
  * @param {string} [props.error]
  * @param {string} [props.className]
+ * @param {string} [props.name] - Form field name of the native input.
  * @returns {import('react').JSX.Element}
  */
-export function FileField({ label, accept, file, onFileChange, hint, error, className = '' }) {
+export function FileField({ label, accept, file, onFileChange, hint, error, className = '', name }) {
   const id = useId();
   const errorId = `${id}-error`;
 
   return (
     <div className={className}>
-      <span className="mb-1.5 block font-sans text-[12px] font-medium text-ink-secondary">
-        {label}
-      </span>
+      <span className="label-text mb-1.5 block text-ink-secondary">{label}</span>
 
       <div
-        className={`flex items-stretch overflow-hidden rounded-md border transition-colors duration-150 ${
-          error ? 'border-danger bg-danger-soft' : 'border-line bg-sunken'
+        className={`flex items-stretch border bg-raised has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${
+          error ? 'border-danger' : 'border-control'
         }`}
       >
         <label
           htmlFor={id}
-          className="flex min-h-10 cursor-pointer items-center gap-2 border-r border-line bg-surface px-4 font-sans text-[12px] font-medium text-ink transition-colors duration-150 hover:bg-primary-soft hover:text-primary"
+          className={`flex min-h-10 cursor-pointer items-center gap-2 border-r bg-surface px-4 text-[13px] font-medium text-ink hover:bg-sunken ${
+            error ? 'border-danger' : 'border-control'
+          }`}
         >
-          <span aria-hidden="true">↑</span>
-          Choose File
+          <Icon icon={UploadSimple} size={16} />
+          Choose file
         </label>
 
         <input
           id={id}
+          name={name}
           type="file"
           accept={accept}
           onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
@@ -199,32 +251,67 @@ export function FileField({ label, accept, file, onFileChange, hint, error, clas
           className="sr-only"
         />
 
-        {/* `min-w-0` on the flex child is what allows `truncate` to engage —
+        {/* `min-w-0` on the flex child is what allows `truncate` to engage:
             long CAD filenames must not blow out the container. */}
         <span className="flex min-w-0 flex-1 items-center px-3">
-          <span
-            className={`truncate font-mono text-[12px] ${
-              file ? 'text-ink' : 'text-ink-subtle'
-            }`}
-          >
+          <span className={`truncate font-mono text-xs ${file ? 'text-ink' : 'text-ink-muted'}`}>
             {file ? file.name : 'No file selected'}
           </span>
         </span>
       </div>
 
-      {hint && !error ? (
-        <p className="mt-1.5 font-sans text-[11.5px] leading-relaxed text-ink-muted">{hint}</p>
-      ) : null}
-      {error ? (
-        <p
-          id={errorId}
-          role="alert"
-          className="mt-1.5 flex items-start gap-1.5 font-sans text-[11.5px] text-danger"
-        >
-          <span aria-hidden="true">⚠</span>
-          {error}
-        </p>
-      ) : null}
+      {hint && !error ? <p className="mt-1.5 text-xs text-ink-muted">{hint}</p> : null}
+      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
+    </div>
+  );
+}
+
+/**
+ * A search box: an icon, a screen-reader label and a `type="search"` input.
+ *
+ * The label is visually hidden because the magnifier and the placeholder say
+ * what the box is for, but it is still the control's accessible name.
+ *
+ * @param {object} props
+ * @param {string} props.label - Accessible name (not displayed).
+ * @param {string} props.value
+ * @param {(value: string) => void} props.onValueChange
+ * @param {string} [props.placeholder]
+ * @param {string} [props.className]
+ * @param {string} [props.name]
+ * @returns {import('react').JSX.Element}
+ */
+export function SearchField({
+  label,
+  value,
+  onValueChange,
+  placeholder = 'Search…',
+  className = '',
+  name = 'search',
+}) {
+  const id = useId();
+
+  return (
+    <div className={`relative ${className}`}>
+      <label htmlFor={id} className="sr-only">
+        {label}
+      </label>
+      <Icon
+        icon={MagnifyingGlass}
+        size={16}
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-secondary"
+      />
+      <input
+        id={id}
+        name={name}
+        type="search"
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        placeholder={placeholder}
+        spellCheck={false}
+        autoComplete="off"
+        className="min-h-9 w-full border border-control bg-raised py-1.5 pl-9 pr-3 text-[13px] text-ink placeholder:text-ink-muted focus:border-primary"
+      />
     </div>
   );
 }

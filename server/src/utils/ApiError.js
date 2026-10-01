@@ -70,6 +70,15 @@ export class ApiError extends Error {
   }
 
   /**
+   * 403 — the operation is understood but switched off or not permitted.
+   * @param {string} [message]
+   * @returns {ApiError}
+   */
+  static forbidden(message = 'Forbidden') {
+    return new ApiError(403, message);
+  }
+
+  /**
    * 404 — the addressed resource does not exist (or is soft-deleted).
    * @param {string} [message]
    * @returns {ApiError}
@@ -114,6 +123,24 @@ export class ApiError extends Error {
    */
   static validation(errors, message = 'Request validation failed') {
     return new ApiError(422, message, errors);
+  }
+
+  /**
+   * 429 — the caller is sending requests faster than the endpoint allows.
+   * @param {string} [message]
+   * @returns {ApiError}
+   */
+  static tooManyRequests(message = 'Too many requests') {
+    return new ApiError(429, message);
+  }
+
+  /**
+   * 503 — a dependency this request needs (for example the MQTT broker) is down.
+   * @param {string} [message]
+   * @returns {ApiError}
+   */
+  static unavailable(message = 'Service unavailable') {
+    return new ApiError(503, message);
   }
 
   /**

@@ -13,14 +13,24 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import Button from '../../../components/ui/Button.jsx';
+import PageHeader from '../../../components/ui/PageHeader.jsx';
 import Panel from '../../../components/ui/Panel.jsx';
+import StatusMarker from '../../../components/ui/StatusMarker.jsx';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/ui/Feedback.jsx';
+import { useAppSelector } from '../../../app/hooks.js';
+import { STATUS_LABEL, formatWithUnit } from '../../../lib/format.js';
+import { usePageTitle } from '../../../lib/usePageTitle.js';
 import { getErrorMessage } from '../../../services/apiSlice.js';
 import { useGetAssetByIdQuery } from '../../assets/assetsApiSlice.js';
+import { useAssetRoom } from '../../telemetry/realtime/socketClient.js';
+import { selectLatestMap } from '../../telemetry/telemetrySlice.js';
 import {
   useDeleteSensorBindingMutation,
   useGetSensorBindingsQuery,
 } from '../../twin-viewer/twinApiSlice.js';
+
+/** Column headings; the last is the row action and is named for screen readers. */
+const COLUMNS = ['Sensor ID', 'Type', 'Component', 'Live value', 'State', 'Bound', ''];
 
 /**
  * @returns {import('react').JSX.Element}
@@ -37,25 +47,32 @@ export function MappingConfigPage() {
 
   const [deleteBinding, deleteState] = useDeleteSensorBindingMutation();
 
+  // The newest value of every channel, to show beside its binding.
+  const latest = useAppSelector(selectLatestMap);
+  useAssetRoom(assetId);
+
   const rows = bindings ?? [];
+
+  usePageTitle(asset?.name ? `${asset.name}, sensor mapping` : 'Sensor mapping');
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="min-w-0">
-          <p className="label-micro mb-2">Sensor Mapping</p>
-          <h2 className="display-page break-words text-ink">{asset?.name ?? 'Asset'}</h2>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <Button to={`/assets/${assetId}`}>Asset Record</Button>
-          <Button to={`/assets/${assetId}/twin`} variant="primary">
-            Open Digital Twin
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Sensor mapping"
+        actions={
+          <>
+            <Button to={`/assets/${assetId}`}>Asset record</Button>
+            <Button to={`/assets/${assetId}/twin`} variant="primary">
+              Open digital twin
+            </Button>
+          </>
+        }
+      >
+        <p className="break-words text-[14px] text-ink-secondary">{asset?.name ?? 'Asset'}</p>
+      </PageHeader>
 
       <Panel
-        title={includeInactive ? 'Binding History' : 'Active Bindings'}
+        title={includeInactive ? 'Binding history' : 'Active bindings'}
         flush
         actions={
           <label className="flex min-h-9 cursor-pointer items-center gap-2 px-1">
@@ -63,24 +80,22 @@ export function MappingConfigPage() {
               type="checkbox"
               checked={includeInactive}
               onChange={(event) => setIncludeInactive(event.target.checked)}
-              className="h-4 w-4 accent-[#3538cd]"
+              className="h-4 w-4 accent-primary"
             />
-            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">
-              Show Retired
-            </span>
+            <span className="text-[13px] text-ink-secondary">Show retired</span>
           </label>
         }
       >
-        {isLoading ? <LoadingState label="Loading Bindings…" /> : null}
+        {isLoading ? <LoadingState variant="rows" label="Loading bindings…" /> : null}
 
         {isError ? (
-          <div className="p-4">
+          <div className="p-5">
             <ErrorState
-              title="Bindings Unavailable"
+              title="Bindings unavailable"
               message={getErrorMessage(error)}
               action={
                 <Button size="sm" onClick={refetch}>
-                  Retry Request
+                  Retry request
                 </Button>
               }
             />
@@ -89,26 +104,31 @@ export function MappingConfigPage() {
 
         {!isLoading && !isError && rows.length === 0 ? (
           <EmptyState
-            title="No Sensor Bindings"
+            title="No sensor bindings"
             description="Open the digital twin, click a component in the viewport, and assign a sensor ID to create the first binding."
             action={
               <Button size="sm" variant="primary" to={`/assets/${assetId}/twin`}>
-                Open Digital Twin
+                Open digital twin
               </Button>
             }
           />
         ) : null}
 
         {rows.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div
+            className="overflow-x-auto"
+            tabIndex={0}
+            role="region"
+            aria-label="Sensor bindings, scrollable"
+          >
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-line bg-sunken">
-                  {['Sensor ID', 'Type', 'Component', 'State', 'Bound', ''].map((heading, index) => (
+                  {COLUMNS.map((heading, index) => (
                     <th
                       key={heading || `actions-${index}`}
                       scope="col"
-                      className="px-4 py-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-ink-muted"
+                      className="px-5 py-2.5 text-xs font-semibold text-ink-secondary"
                     >
                       {heading || <span className="sr-only">Actions</span>}
                     </th>
@@ -121,66 +141,82 @@ export function MappingConfigPage() {
                   <tr
                     key={binding._id}
                     className={`border-b border-line last:border-b-0 ${
-                      binding.isActive ? '' : 'bg-sunken/60'
+                      binding.isActive ? 'hover:bg-sunken' : 'bg-sunken'
                     }`}
                   >
-                    <td className="px-4 py-3">
-                      <span className="data-readout text-[12px] font-medium text-ink">
+                    <td className="px-5 py-3">
+                      <span className="data-readout font-medium text-ink" translate="no">
                         {binding.sensorId}
                       </span>
                     </td>
 
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-muted">
-                        {binding.sensorType}
+                    <td className="px-5 py-3 text-[13px] text-ink-secondary">
+                      {binding.sensorType}
+                    </td>
+
+                    <td className="max-w-xs px-5 py-3">
+                      <span className="block truncate font-mono text-xs text-ink">
+                        {binding.meshNodeId?.displayName || binding.meshNodeId?.meshName || 'None'}
                       </span>
                     </td>
 
-                    <td className="max-w-xs px-4 py-3">
-                      <span className="block truncate font-mono text-[11px] text-ink">
-                        {binding.meshNodeId?.displayName || binding.meshNodeId?.meshName || '—'}
-                      </span>
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-2">
-                        <span
-                          aria-hidden="true"
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            binding.isActive ? 'bg-success' : 'bg-ink-subtle'
-                          }`}
-                        />
-                        <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink">
-                          {binding.isActive ? 'Active' : 'Retired'}
+                    <td className="px-5 py-3">
+                      {binding.isActive && latest[binding.sensorId] ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span className="data-readout font-medium text-ink">
+                            {formatWithUnit(
+                              latest[binding.sensorId].value,
+                              latest[binding.sensorId].unit,
+                              latest[binding.sensorId].decimals,
+                            )}
+                          </span>
+                          <StatusMarker
+                            state={latest[binding.sensorId].status}
+                            label={STATUS_LABEL[latest[binding.sensorId].status]}
+                            className="text-xs"
+                          />
                         </span>
-                      </span>
+                      ) : (
+                        <span className="text-xs text-ink-muted">
+                          {binding.isActive ? 'No signal' : 'Retired'}
+                        </span>
+                      )}
                     </td>
 
-                    <td className="px-4 py-3">
-                      <span className="data-readout text-[11px] text-ink-muted">
-                        {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
-                          new Date(binding.boundAt),
-                        )}
-                      </span>
+                    <td className="px-5 py-3">
+                      <StatusMarker
+                        state={binding.isActive ? 'online' : 'offline'}
+                        label={binding.isActive ? 'Active' : 'Retired'}
+                      />
                     </td>
 
-                    <td className="px-4 py-3 text-right">
+                    <td className="data-readout px-5 py-3 text-xs text-ink-secondary">
+                      {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
+                        new Date(binding.boundAt),
+                      )}
+                    </td>
+
+                    <td className="px-5 py-3 text-right">
                       {binding.isActive ? (
                         <Button
                           size="sm"
                           variant="danger"
-                          loading={deleteState.isLoading}
+                          // Only the row being removed shows the busy state.
+                          loading={
+                            deleteState.isLoading &&
+                            deleteState.originalArgs?.bindingId === binding._id
+                          }
                           onClick={() => deleteBinding({ assetId, bindingId: binding._id })}
                         >
                           Unbind
                         </Button>
                       ) : (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-subtle">
+                        <span className="data-readout text-xs text-ink-muted">
                           {binding.unboundAt
                             ? new Intl.DateTimeFormat(undefined, { dateStyle: 'short' }).format(
                                 new Date(binding.unboundAt),
                               )
-                            : '—'}
+                            : 'None'}
                         </span>
                       )}
                     </td>

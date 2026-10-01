@@ -20,6 +20,7 @@ import {
   selectAutoRotate,
   selectShowBlueprintGrid,
 } from '../twinViewerSlice.js';
+import CameraCommands from './CameraCommands.jsx';
 import SceneLighting from './SceneLighting.jsx';
 import TwinModel from './TwinModel.jsx';
 
@@ -28,7 +29,7 @@ import TwinModel from './TwinModel.jsx';
  *
  * Outside the canvas rather than through drei's `<Html>`, because an overlay
  * that must be visible *while the scene is suspended* cannot itself live inside
- * the suspended tree.
+ * the suspended tree. Opaque, with no blur: the stage behind it is plain.
  *
  * @returns {import('react').JSX.Element|null}
  */
@@ -38,37 +39,34 @@ function LoadProgressOverlay() {
 
   return (
     <div
-      className="absolute inset-0 z-20 flex items-center justify-center bg-canvas/70 backdrop-blur-[2px]"
+      className="absolute inset-0 z-20 flex items-center justify-center bg-stage"
       role="status"
       aria-live="polite"
     >
-      <div className="w-80 rounded-lg border border-line bg-surface p-6 shadow-lg">
+      <div className="w-80 max-w-[calc(100%-2rem)] border border-line bg-surface p-6">
         <div className="mb-3 flex items-baseline justify-between">
-          <p className="label-micro">Loading Geometry</p>
-          <p className="data-readout text-[13px] font-medium text-ink">
-            {Math.round(progress)}%
-          </p>
+          <p className="label-text text-ink-secondary">Loading geometry</p>
+          <p className="data-readout font-medium text-ink">{Math.round(progress)}%</p>
         </div>
 
         {/* Determinate, not a spinner: a multi-megabyte pack genuinely takes
             seconds, and hiding that reads as a hang. */}
         <div
-          className="h-1.5 w-full overflow-hidden rounded-full bg-sunken"
+          className="h-2 w-full bg-sunken"
           role="progressbar"
           aria-valuenow={Math.round(progress)}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label="Model loading progress"
         >
+          {/* Scaled, not resized: transform is compositor-friendly, width is not. */}
           <div
-            className="h-full rounded-full bg-primary transition-[width] duration-200 ease-out"
-            style={{ width: `${Math.max(progress, 4)}%` }}
+            className="h-full w-full origin-left bg-primary transition-transform duration-200 ease-out"
+            style={{ transform: `scaleX(${Math.max(progress, 4) / 100})` }}
           />
         </div>
 
-        <p className="mt-3 font-sans text-[12px] text-ink-muted">
-          Decoding mesh and building the scene graph…
-        </p>
+        <p className="mt-3 text-xs text-ink-muted">Decoding the mesh and building the scene graph…</p>
       </div>
     </div>
   );
@@ -106,7 +104,7 @@ export function TwinCanvas({ modelUrl }) {
         }}
         // Clicking empty space clears the selection — the standard CAD gesture.
         onPointerMissed={() => dispatch(clearSelection())}
-        // Transparent so the CSS blueprint lattice behind shows through.
+        // Transparent so the flat `stage` backdrop behind shows through.
         style={{ background: 'transparent' }}
       >
         <SceneLighting />
@@ -120,10 +118,12 @@ export function TwinCanvas({ modelUrl }) {
             infiniteGrid
             cellSize={1}
             cellThickness={0.5}
-            cellColor="#cbd5e1"
+            // Neutral measuring lines on the stage colour (#d4d7d1). The grid is
+            // a spatial aid, not decoration, so it stays.
+            cellColor="#bcc1b8"
             sectionSize={10}
             sectionThickness={1}
-            sectionColor="#94a3b8"
+            sectionColor="#9aa096"
             fadeDistance={140}
             fadeStrength={1.5}
             followCamera={false}
@@ -134,8 +134,8 @@ export function TwinCanvas({ modelUrl }) {
 
         {/*
           `makeDefault` registers these controls on the R3F store, which is how
-          `TwinModel` reaches them for framing without prop-drilling a ref
-          between siblings.
+          `TwinModel` and `CameraCommands` reach them without prop-drilling a
+          ref between siblings.
         */}
         <OrbitControls
           makeDefault
@@ -150,6 +150,8 @@ export function TwinCanvas({ modelUrl }) {
           // Matches the zoom behaviour of every CAD tool the user already knows.
           zoomToCursor
         />
+
+        <CameraCommands />
       </Canvas>
 
       <LoadProgressOverlay />

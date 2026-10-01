@@ -1,9 +1,10 @@
 /**
- * @file Panel — the console's fundamental container.
+ * @file Panel, the console's fundamental container.
  *
- * A white card on the tinted canvas, lifted by a hairline border and a
- * slate-tinted shadow rather than a heavy drop shadow. Depth comes from
- * surface contrast, which keeps a dense page calm.
+ * A flat surface with a 1 px ruled edge. Hierarchy comes from the tone step
+ * between canvas and surface and from the ruled header, not from shadow. There
+ * is deliberately no `overflow-hidden` here: it would clip the focus ring of
+ * any control sitting near the edge.
  *
  * @module components/ui/Panel
  */
@@ -12,48 +13,37 @@
  * @param {object} props
  * @param {string} [props.title]
  * @param {string} [props.description] - Optional sub-line under the title.
- * @param {import('react').ReactNode} [props.icon] - Small leading glyph.
  * @param {import('react').ReactNode} [props.actions] - Right-aligned controls.
  * @param {import('react').ReactNode} props.children
  * @param {boolean} [props.flush] - Remove body padding, for edge-to-edge tables.
+ * @param {'default'|'danger'} [props.tone] - `danger` draws the whole border in alarm.
  * @param {string} [props.className]
  * @returns {import('react').JSX.Element}
  */
 export function Panel({
   title,
   description,
-  icon,
   actions,
   children,
   flush = false,
+  tone = 'default',
   className = '',
 }) {
   return (
     <section
-      className={`overflow-hidden rounded-lg border border-line bg-surface shadow-sm ${className}`}
+      // `min-w-0`: a Panel is often a grid item, and a grid item defaults to
+      // `min-width: auto`, which would stop it shrinking below the intrinsic
+      // width of a table inside it and push the whole page wider than the screen.
+      className={`min-w-0 border bg-surface ${tone === 'danger' ? 'border-danger' : 'border-line'} ${className}`}
     >
       {title || actions ? (
-        <header className="flex min-h-[52px] flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-5 py-3">
-          <div className="flex min-w-0 items-center gap-2.5">
-            {icon ? (
-              <span
-                aria-hidden="true"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary"
-              >
-                {icon}
-              </span>
-            ) : null}
-            <div className="min-w-0">
-              {title ? <h2 className="display-section truncate">{title}</h2> : null}
-              {description ? (
-                <p className="mt-0.5 truncate font-sans text-[12px] text-ink-muted">
-                  {description}
-                </p>
-              ) : null}
-            </div>
+        <header className="flex min-h-14 flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
+          <div className="min-w-0">
+            {title ? <h2 className="display-section truncate">{title}</h2> : null}
+            {description ? <p className="label-text mt-0.5 truncate">{description}</p> : null}
           </div>
 
-          {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </header>
       ) : null}
 

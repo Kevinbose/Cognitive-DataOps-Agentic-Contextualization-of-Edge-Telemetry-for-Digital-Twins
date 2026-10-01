@@ -16,6 +16,8 @@ import { SensorBinding } from '../models/SensorBinding.model.js';
 import { buildConvertedKey, buildOriginalKey, buildPublicPath } from '../config/storage.config.js';
 import { ApiError } from '../utils/ApiError.js';
 import { buildPaginationMeta } from '../utils/ApiResponse.js';
+import { DOMAIN_EVENT, emitDomainEvent } from '../utils/domainEvents.js';
+import { releaseMachinesOfAsset } from './device.service.js';
 import * as storageService from './storage.service.js';
 
 /**
@@ -270,6 +272,14 @@ export async function softDeleteAsset(assetId) {
   ]);
 
   await asset.softDelete();
+  // Its machines go back to being available for another twin.
+  await releaseMachinesOfAsset(asset._id);
+
+  // Its bindings were retired above; drop them from the live index at once.
+  emitDomainEvent(DOMAIN_EVENT.BINDING_CHANGED, {
+    assetIds: [String(asset._id)],
+    reason: 'asset-deleted',
+  });
 
   return {
     assetId: asset.id,

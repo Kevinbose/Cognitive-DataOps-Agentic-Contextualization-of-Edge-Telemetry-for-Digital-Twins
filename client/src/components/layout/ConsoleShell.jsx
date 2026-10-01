@@ -1,14 +1,16 @@
 /**
- * @file Application chrome — brand rail, primary navigation, content frame.
+ * @file Application chrome: brand rail, primary navigation, content frame, footer.
  *
- * A sticky translucent header over the tinted canvas. The nav is a segmented
- * control rather than plain links, so the current section is unambiguous at a
- * glance in a tool people keep open all day.
+ * An opaque header ruled along its bottom edge. The active section is marked by
+ * a 2 px brand underline rather than a filled pill, which keeps the chrome flat
+ * and leaves all the colour to the content it frames.
  *
  * @module components/layout/ConsoleShell
  */
 
 import { NavLink } from 'react-router-dom';
+
+import ConnectionChip from '../../features/telemetry/components/ConnectionChip.jsx';
 
 /** @type {Array<{to: string, label: string, end?: boolean}>} */
 const NAV_ITEMS = [
@@ -17,59 +19,52 @@ const NAV_ITEMS = [
 ];
 
 /**
+ * The brand mark: an outlined square (the physical asset) and a solid square
+ * offset from it (its digital shadow). Flat and two-tone, inline so it inherits
+ * the palette and never round-trips to the network.
+ *
+ * @returns {import('react').JSX.Element}
+ */
+export function BrandMark() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true" focusable="false">
+      <rect x="3" y="3" width="15" height="15" className="stroke-ink" strokeWidth="2" />
+      <rect x="10" y="10" width="15" height="15" className="fill-primary" />
+    </svg>
+  );
+}
+
+/**
  * @param {object} props
  * @param {import('react').ReactNode} props.children
  * @returns {import('react').JSX.Element}
  */
 export function ConsoleShell({ children }) {
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-dvh flex-col">
       {/* First tabbable element on every page. */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-[13px] focus:font-medium focus:text-ink-inverse"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-primary focus:px-4 focus:py-2 focus:text-[13px] focus:font-medium focus:text-ink-inverse"
       >
         Skip to main content
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-6 px-6">
+      <header className="sticky top-0 z-30 border-b border-line bg-surface">
+        <div className="mx-auto flex h-16 max-w-[1600px] items-stretch justify-between gap-6 px-6">
           {/* ── Brand ──────────────────────────────────────────────────────── */}
-          <NavLink to="/assets" className="flex shrink-0 items-center gap-3">
-            {/* Mark: concentric squares — a physical asset and its digital
-                shadow. Inline SVG so it inherits the palette and never
-                round-trips to the network. */}
-            <span
-              aria-hidden="true"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-signal shadow-sm"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="2" y="2" width="9" height="9" rx="1.5" stroke="white" strokeWidth="1.6" />
-                <rect
-                  x="7"
-                  y="7"
-                  width="9"
-                  height="9"
-                  rx="1.5"
-                  stroke="white"
-                  strokeWidth="1.6"
-                  opacity="0.65"
-                />
-              </svg>
-            </span>
-
+          <NavLink to="/assets" className="flex shrink-0 items-center gap-3" translate="no">
+            <BrandMark />
             <span className="hidden sm:block">
-              <span className="block font-sans text-[15px] font-semibold leading-tight tracking-[-0.02em] text-ink">
+              <span className="block font-display text-[17px] font-semibold leading-5 text-ink [font-stretch:112.5%]">
                 Cognitive DataOps
               </span>
-              <span className="block font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-muted">
-                Industrial Twin Console
-              </span>
+              <span className="label-text block">Industrial twin console</span>
             </span>
           </NavLink>
 
           {/* ── Primary nav ────────────────────────────────────────────────── */}
-          <nav aria-label="Primary" className="flex items-center gap-1 rounded-lg bg-sunken p-1">
+          <nav aria-label="Primary" className="flex items-stretch">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -77,11 +72,10 @@ export function ConsoleShell({ children }) {
                 end={item.end}
                 className={({ isActive }) =>
                   [
-                    'rounded-md px-3.5 py-1.5 font-sans text-[13px] font-medium',
-                    'transition-[background-color,color,box-shadow] duration-150',
+                    'flex items-center border-b-2 px-4 text-[13px] font-medium',
                     isActive
-                      ? 'bg-surface text-ink shadow-xs'
-                      : 'text-ink-muted hover:text-ink',
+                      ? 'border-primary text-ink'
+                      : 'border-transparent text-ink-secondary hover:bg-sunken hover:text-ink',
                   ].join(' ')
                 }
               >
@@ -90,30 +84,38 @@ export function ConsoleShell({ children }) {
             ))}
           </nav>
 
-          {/* ── Environment badge ──────────────────────────────────────────── */}
-          <div className="hidden items-center gap-2 md:flex">
-            <span className="flex items-center gap-1.5 rounded-full border border-success-border bg-success-soft px-2.5 py-1">
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-1.5 rounded-full bg-success"
-              />
-              <span className="font-mono text-[10.5px] font-medium uppercase tracking-[0.06em] text-success">
-                Local
-              </span>
-            </span>
-            <span
-              className="font-mono text-[10.5px] tracking-[0.04em] text-ink-subtle"
-              translate="no"
-            >
-              v0.1
-            </span>
+          {/* ── Live connection ────────────────────────────────────────────── */}
+          <div className="hidden items-center md:flex">
+            <ConnectionChip />
           </div>
         </div>
       </header>
 
-      <main id="main-content" className="mx-auto max-w-[1600px] px-6 py-8">
+      <main id="main-content" className="mx-auto w-full max-w-[1600px] flex-1 px-6 py-8">
         {children}
       </main>
+
+      <footer className="border-t border-line">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-ink-muted">
+            Capstone prototype. Built for research and demonstration, not for production use.
+          </p>
+          <nav aria-label="Legal" className="flex gap-5">
+            <NavLink
+              to="/terms"
+              className="text-xs font-medium text-ink-secondary underline underline-offset-4 hover:text-ink"
+            >
+              Terms
+            </NavLink>
+            <NavLink
+              to="/privacy"
+              className="text-xs font-medium text-ink-secondary underline underline-offset-4 hover:text-ink"
+            >
+              Privacy
+            </NavLink>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }

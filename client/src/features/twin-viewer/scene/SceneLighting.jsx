@@ -23,11 +23,11 @@ export function SceneLighting() {
   return (
     <>
       {/*
-        Hemisphere fill: paper-toned sky against a cooler ground bounce. This is
-        what stops downward-facing surfaces going pure black in an asset pack
-        that ships no lights of its own.
+        Hemisphere fill: a neutral sky against a ground bounce matched to the
+        stage colour. This is what stops downward-facing surfaces going pure
+        black in an asset pack that ships no lights of its own.
       */}
-      <hemisphereLight args={['#ffffff', '#c8c8c0', 1.15]} />
+      <hemisphereLight args={['#ffffff', '#c4c8bf', 1.15]} />
 
       {/* Base ambient so no face is ever unlit. */}
       <ambientLight intensity={0.55} />
@@ -38,7 +38,7 @@ export function SceneLighting() {
       {/* Fill — softens the key's shadow side without flattening the form. */}
       <directionalLight position={[-7, 5, -4]} intensity={0.55} color="#f0f0ea" />
 
-      {/* Rim — separates the model's silhouette from the pale canvas behind it. */}
+      {/* Rim — separates the model's silhouette from the stage behind it. */}
       <directionalLight position={[0, -6, -9]} intensity={0.35} color="#ffffff" />
     </>
   );

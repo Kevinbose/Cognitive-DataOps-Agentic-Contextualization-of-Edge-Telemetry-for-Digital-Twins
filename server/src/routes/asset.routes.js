@@ -20,6 +20,7 @@ import {
   updateAssetSchema,
 } from '../validators/asset.validator.js';
 import { assetIdParamSchema } from '../validators/common.validator.js';
+import { assetScopedMachineRouter } from './machine.routes.js';
 import { assetScopedMeshNodeRouter } from './meshNode.routes.js';
 import { assetScopedBindingRouter } from './sensorBinding.routes.js';
 
@@ -113,6 +114,7 @@ assetRouter.get(
 
 /* ─── Asset-scoped sub-resources ───────────────────────────────────────────── */
 
+assetRouter.use('/:assetId/machines', assetScopedMachineRouter);
 assetRouter.use('/:assetId/mesh-nodes', assetScopedMeshNodeRouter);
 assetRouter.use('/:assetId/sensor-bindings', assetScopedBindingRouter);
 

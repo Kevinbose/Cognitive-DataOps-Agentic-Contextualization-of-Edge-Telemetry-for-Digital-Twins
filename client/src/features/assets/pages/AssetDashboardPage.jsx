@@ -7,10 +7,15 @@
 import { Link, useSearchParams } from 'react-router-dom';
 
 import Button from '../../../components/ui/Button.jsx';
+import PageHeader from '../../../components/ui/PageHeader.jsx';
 import Panel from '../../../components/ui/Panel.jsx';
-import StatusPill, { Tag } from '../../../components/ui/StatusPill.jsx';
+import { SearchField } from '../../../components/ui/Field.jsx';
+import { Plus } from '../../../components/ui/icons.js';
+import { Segmented } from '../../../components/ui/Segmented.jsx';
+import StatusPill, { RatchetGlyph, Tag } from '../../../components/ui/StatusPill.jsx';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/ui/Feedback.jsx';
 import { formatBytes } from '../../../lib/three-helpers.js';
+import { usePageTitle } from '../../../lib/usePageTitle.js';
 import { getErrorMessage } from '../../../services/apiSlice.js';
 import { useGetAssetsQuery } from '../assetsApiSlice.js';
 
@@ -23,26 +28,65 @@ const STATUS_FILTERS = [
 ];
 
 /**
- * A metric tile in the summary strip.
+ * The status ratchet as one proportional bar.
+ *
+ * Three segments sized by how many assets sit at each stage. They differ by
+ * fill (hollow, mid, solid), not by hue, and each is named in the caption, so
+ * the bar reads without colour. With no assets it is a single hollow outline.
+ *
+ * @param {object} props
+ * @param {number} props.pending
+ * @param {number} props.converted
+ * @param {number} props.mapped
+ * @returns {import('react').JSX.Element}
+ */
+function RatchetBar({ pending, converted, mapped }) {
+  const total = pending + converted + mapped;
+  const segments = [
+    { key: 'pending', count: pending, className: 'border border-control bg-transparent' },
+    { key: 'converted', count: converted, className: 'border border-ink-muted bg-ink-muted' },
+    { key: 'mapped', count: mapped, className: 'border border-ink bg-ink' },
+  ];
+
+  return (
+    <div
+      role="img"
+      aria-label={`${total} asset${total === 1 ? '' : 's'} on this page: ${pending} awaiting mesh, ${converted} renderable, ${mapped} instrumented`}
+      className="flex h-3 w-full gap-0.5"
+    >
+      {total === 0 ? (
+        <span className="block h-full w-full border border-control" />
+      ) : (
+        segments
+          .filter((segment) => segment.count > 0)
+          .map((segment) => (
+            <span
+              key={segment.key}
+              className={`block h-full ${segment.className}`}
+              style={{ flexGrow: segment.count, flexBasis: 0 }}
+            />
+          ))
+      )}
+    </div>
+  );
+}
+
+/**
+ * One cell of the stat strip.
  *
  * @param {object} props
  * @param {string} props.label
  * @param {number} props.value
- * @param {string} props.accent - Tailwind class for the leading rule.
- * @param {string} [props.caption]
+ * @param {string} props.caption
  * @returns {import('react').JSX.Element}
  */
-function MetricTile({ label, value, accent, caption }) {
+function Stat({ label, value, caption }) {
   return (
-    // `<dl>` rather than nested divs — semantic markup for a readout.
-    <dl className="relative overflow-hidden rounded-lg border border-line bg-surface p-5 shadow-sm">
-      <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-0.5 ${accent}`} />
-      <dt className="label-micro">{label}</dt>
-      <dd className="metric-figure mt-2.5">{value}</dd>
-      {caption ? (
-        <dd className="mt-1 font-sans text-[11.5px] text-ink-subtle">{caption}</dd>
-      ) : null}
-    </dl>
+    <div className="px-5 py-4">
+      <dt className="label-text text-ink-secondary">{label}</dt>
+      <dd className="display-figure mt-2">{value}</dd>
+      <dd className="mt-1 text-xs text-ink-muted">{caption}</dd>
+    </div>
   );
 }
 
@@ -50,6 +94,8 @@ function MetricTile({ label, value, accent, caption }) {
  * @returns {import('react').JSX.Element}
  */
 export function AssetDashboardPage() {
+  usePageTitle('Asset registry');
+
   /**
    * Filters live in the URL rather than component state, so a filtered view is
    * bookmarkable and shareable — the guidelines' "URL reflects state" rule.
@@ -82,41 +128,31 @@ export function AssetDashboardPage() {
 
   return (
     <div className="space-y-7">
-      {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="display-page">Asset Registry</h1>
-          <p className="mt-1.5 max-w-2xl font-sans text-[13.5px] leading-relaxed text-ink-muted">
-            Industrial assets tracked from raw CAD through to an instrumented digital twin.
-          </p>
-        </div>
-        <Button to="/assets/new" variant="primary" icon="+">
-          Ingest Asset
-        </Button>
-      </div>
+      <PageHeader
+        title="Asset registry"
+        actions={
+          <Button to="/assets/new" variant="primary" icon={Plus}>
+            Ingest asset
+          </Button>
+        }
+      />
 
-      {/* ── Metrics ──────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricTile label="Total Assets" value={total} accent="bg-primary" caption="In registry" />
-        <MetricTile
-          label="Awaiting Mesh"
-          value={countBy('pending_conversion')}
-          accent="bg-ink-subtle"
-          caption="CAD only"
-        />
-        <MetricTile
-          label="Renderable"
-          value={countBy('converted')}
-          accent="bg-signal"
-          caption="Mesh uploaded"
-        />
-        <MetricTile
-          label="Instrumented"
-          value={countBy('mapped')}
-          accent="bg-success"
-          caption="Sensors bound"
-        />
-      </div>
+      {/* ── Stat strip: one ruled band, ratchet bar above the figures ─────── */}
+      <section aria-label="Registry summary" className="rule-ink border-b border-line bg-surface">
+        <div className="px-5 pt-4">
+          <RatchetBar
+            pending={countBy('pending_conversion')}
+            converted={countBy('converted')}
+            mapped={countBy('mapped')}
+          />
+        </div>
+        <dl className="grid grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-line">
+          <Stat label="Total assets" value={total} caption="In registry" />
+          <Stat label="Awaiting mesh" value={countBy('pending_conversion')} caption="CAD only" />
+          <Stat label="Renderable" value={countBy('converted')} caption="Mesh uploaded" />
+          <Stat label="Instrumented" value={countBy('mapped')} caption="Sensors bound" />
+        </dl>
+      </section>
 
       {/* ── Registry table ───────────────────────────────────────────────── */}
       <Panel
@@ -124,52 +160,25 @@ export function AssetDashboardPage() {
         description={`${total} record${total === 1 ? '' : 's'}`}
         flush
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <div
-              className="flex items-center gap-0.5 rounded-lg bg-sunken p-0.5"
-              role="group"
-              aria-label="Filter by status"
-            >
-              {STATUS_FILTERS.map((filter) => {
-                const isActive = status === filter.value;
-                return (
-                  <button
-                    key={filter.value || 'all'}
-                    type="button"
-                    onClick={() => updateParam('status', filter.value)}
-                    aria-pressed={isActive}
-                    className={[
-                      'rounded-md px-2.5 py-1.5 font-sans text-[12px] font-medium',
-                      'transition-[background-color,color,box-shadow] duration-150',
-                      isActive
-                        ? 'bg-surface text-ink shadow-xs'
-                        : 'text-ink-muted hover:text-ink',
-                    ].join(' ')}
-                  >
-                    {filter.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="w-full sm:w-56">
-              <label htmlFor="asset-search" className="sr-only">
-                Search assets by name or uploader
-              </label>
-              <input
-                id="asset-search"
-                type="search"
-                value={search}
-                onChange={(event) => updateParam('search', event.target.value)}
-                placeholder="Search assets…"
-                spellCheck={false}
-                className="min-h-9 w-full rounded-md border border-line bg-sunken px-3 font-sans text-[12.5px] text-ink placeholder:text-ink-subtle transition-[background-color,border-color,box-shadow] duration-150 focus:border-primary focus:bg-surface focus:shadow-focus focus:outline-none"
-              />
-            </div>
-          </div>
+          <>
+            <Segmented
+              label="Filter by status"
+              options={STATUS_FILTERS}
+              value={status}
+              onChange={(value) => updateParam('status', value)}
+            />
+            <SearchField
+              label="Search assets by name or uploader"
+              value={search}
+              onValueChange={(value) => updateParam('search', value)}
+              placeholder="Search assets…"
+              name="assetSearch"
+              className="w-full sm:w-60"
+            />
+          </>
         }
       >
-        {isLoading ? <LoadingState label="Loading registry…" /> : null}
+        {isLoading ? <LoadingState variant="rows" label="Loading registry…" /> : null}
 
         {isError ? (
           <div className="p-5">
@@ -187,8 +196,7 @@ export function AssetDashboardPage() {
 
         {!isLoading && !isError && assets.length === 0 ? (
           <EmptyState
-            icon={hasFilters ? '⌕' : '◇'}
-            title={hasFilters ? 'No matching assets' : 'Registry is empty'}
+            title={hasFilters ? 'No matching assets' : 'The registry is empty'}
             description={
               hasFilters
                 ? 'No asset matches the current filters. Clear them to see every record.'
@@ -200,25 +208,59 @@ export function AssetDashboardPage() {
                   Clear filters
                 </Button>
               ) : (
-                <Button to="/assets/new" variant="primary" size="sm" icon="+">
-                  Ingest Asset
+                <Button to="/assets/new" variant="primary" size="sm" icon={Plus}>
+                  Ingest asset
                 </Button>
               )
             }
-          />
+          >
+            {hasFilters ? null : (
+              // First run: show the three stages an asset will move through.
+              <ol className="mt-6 grid gap-3 sm:grid-cols-3">
+                {[
+                  { filled: 1, name: 'Pending conversion', note: 'Source CAD on record, no mesh yet' },
+                  { filled: 2, name: 'Converted', note: 'A .glb mesh renders in the viewer' },
+                  { filled: 3, name: 'Instrumented', note: 'At least one sensor is bound' },
+                ].map((stage) => (
+                  <li key={stage.name} className="border-t border-line pt-3">
+                    <div className="flex items-center gap-2">
+                      <RatchetGlyph filled={stage.filled} />
+                      <span className="text-[13px] font-medium text-ink">{stage.name}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-ink-muted">{stage.note}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </EmptyState>
         ) : null}
 
         {assets.length > 0 ? (
           // Scroll is contained here so the page body never scrolls sideways.
-          <div className="overflow-x-auto">
+          // Focusable and labelled, so a keyboard user can scroll it.
+          <div
+            className="overflow-x-auto"
+            tabIndex={0}
+            role="region"
+            aria-label="Asset table, scrollable"
+          >
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-line bg-sunken/60">
-                  {['Asset', 'Status', 'Source', 'Mesh', 'Uploader', ''].map((heading, index) => (
+                <tr className="border-b border-line bg-sunken">
+                  {[
+                    { heading: 'Asset' },
+                    { heading: 'Status' },
+                    { heading: 'Source' },
+                    { heading: 'Mesh', align: 'right' },
+                    { heading: 'Uploader' },
+                    { heading: '', align: 'right' },
+                  ].map(({ heading, align }, index) => (
                     <th
                       key={heading || `actions-${index}`}
                       scope="col"
-                      className="px-5 py-2.5 font-sans text-[11.5px] font-semibold tracking-[-0.005em] text-ink-muted"
+                      className={`px-5 py-2.5 text-xs font-semibold text-ink-secondary ${
+                        align === 'right' ? 'text-right' : ''
+                      }`}
                     >
                       {heading || <span className="sr-only">Actions</span>}
                     </th>
@@ -230,48 +272,42 @@ export function AssetDashboardPage() {
                 {assets.map((asset) => (
                   <tr
                     key={asset._id}
-                    className="group border-b border-line transition-colors duration-150 last:border-b-0 hover:bg-sunken/50"
+                    className="border-b border-line last:border-b-0 hover:bg-sunken"
                   >
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3">
                       <Link
                         to={`/assets/${asset._id}`}
-                        className="font-sans text-[13.5px] font-medium text-ink transition-colors duration-150 hover:text-primary"
+                        className="text-[14px] font-medium text-ink underline-offset-4 hover:text-primary hover:underline"
                       >
                         {asset.name}
                       </Link>
-                      <p className="data-readout mt-0.5 text-[10.5px] text-ink-subtle">
+                      <p className="data-readout mt-0.5 text-xs text-ink-muted" translate="no">
                         {asset._id}
                       </p>
                     </td>
 
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3">
                       <StatusPill status={asset.status} />
                     </td>
 
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3">
                       <Tag mono>{asset.sourceType.toUpperCase()}</Tag>
                     </td>
 
-                    <td className="px-5 py-3.5">
-                      <span className="data-readout text-[12.5px] text-ink-secondary">
-                        {asset.convertedFile ? formatBytes(asset.convertedFile.sizeBytes) : '—'}
-                      </span>
+                    <td className="data-readout px-5 py-3 text-right text-ink-secondary">
+                      {asset.convertedFile ? formatBytes(asset.convertedFile.sizeBytes) : 'None'}
                     </td>
 
-                    <td className="px-5 py-3.5">
-                      <span className="font-sans text-[12.5px] text-ink-secondary">
-                        {asset.uploader}
-                      </span>
-                    </td>
+                    <td className="px-5 py-3 text-[13px] text-ink-secondary">{asset.uploader}</td>
 
-                    <td className="px-5 py-3.5 text-right">
+                    <td className="px-5 py-3 text-right">
                       {asset.isRenderable ? (
                         <Button to={`/assets/${asset._id}/twin`} variant="primary" size="sm">
-                          Open Twin
+                          Open twin
                         </Button>
                       ) : (
                         <Button to={`/assets/${asset._id}`} size="sm">
-                          Add Mesh
+                          Add mesh
                         </Button>
                       )}
                     </td>

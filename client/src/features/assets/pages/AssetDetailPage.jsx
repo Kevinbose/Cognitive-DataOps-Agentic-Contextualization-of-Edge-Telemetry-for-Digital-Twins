@@ -1,6 +1,10 @@
 /**
  * @file Asset detail — metadata, artefacts, and the entry point to the twin.
  *
+ * Laid out as a datasheet: a ruled definition list for the record, a two-row
+ * table for its two file artefacts, and a danger section with a full alarm
+ * border.
+ *
  * @module features/assets/pages/AssetDetailPage
  */
 
@@ -8,12 +12,16 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import Button from '../../../components/ui/Button.jsx';
+import PageHeader from '../../../components/ui/PageHeader.jsx';
 import Panel from '../../../components/ui/Panel.jsx';
 import StatusPill from '../../../components/ui/StatusPill.jsx';
 import { ErrorState, LoadingState } from '../../../components/ui/Feedback.jsx';
 import { FileField } from '../../../components/ui/Field.jsx';
+import { ArrowLeft } from '../../../components/ui/icons.js';
 import { formatBytes } from '../../../lib/three-helpers.js';
+import { usePageTitle } from '../../../lib/usePageTitle.js';
 import { getErrorMessage } from '../../../services/apiSlice.js';
+import { useAssetRoom } from '../../telemetry/realtime/socketClient.js';
 import {
   useDeleteAssetMutation,
   useGetAssetByIdQuery,
@@ -21,7 +29,7 @@ import {
 } from '../assetsApiSlice.js';
 
 /**
- * One row in a definition list.
+ * One row of the datasheet: a fixed-width label column and the value.
  *
  * @param {object} props
  * @param {string} props.label
@@ -31,9 +39,9 @@ import {
  */
 function DetailRow({ label, children, mono = false }) {
   return (
-    <div className="flex flex-col gap-1 border-b border-line py-3 last:border-b-0 sm:flex-row sm:items-baseline sm:gap-4">
-      <dt className="label-micro sm:w-44 sm:shrink-0">{label}</dt>
-      <dd className={`min-w-0 break-words text-[13px] text-ink ${mono ? 'data-readout' : 'font-sans'}`}>
+    <div className="grid gap-1 border-b border-line py-3 last:border-b-0 sm:grid-cols-[160px_1fr] sm:gap-4">
+      <dt className="label-text text-ink-secondary">{label}</dt>
+      <dd className={`min-w-0 break-words text-[14px] text-ink ${mono ? 'data-readout' : ''}`}>
         {children}
       </dd>
     </div>
@@ -55,19 +63,33 @@ export function AssetDetailPage() {
   const [uploadError, setUploadError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  if (isLoading) return <LoadingState label="Loading Asset…" />;
+  usePageTitle(asset?.name ? `${asset.name}, asset record` : 'Asset record');
+  // Binding a sensor in another tab promotes this asset's status; hear about it.
+  useAssetRoom(assetId);
+
+  if (isLoading) {
+    return (
+      <>
+        <h1 className="sr-only">Asset record</h1>
+        <LoadingState variant="page" label="Loading asset…" />
+      </>
+    );
+  }
 
   if (isError) {
     return (
-      <ErrorState
-        title="Asset Unavailable"
-        message={getErrorMessage(error)}
-        action={
-          <Button size="sm" onClick={refetch}>
-            Retry Request
-          </Button>
-        }
-      />
+      <>
+        <h1 className="sr-only">Asset record</h1>
+        <ErrorState
+          title="Asset unavailable"
+          message={getErrorMessage(error)}
+          action={
+            <Button size="sm" onClick={refetch}>
+              Retry request
+            </Button>
+          }
+        />
+      </>
     );
   }
 
@@ -94,32 +116,33 @@ export function AssetDetailPage() {
   return (
     <div className="space-y-6">
       {/* ── Title block ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
-          <p className="label-micro mb-2">Asset Record</p>
-          <h2 className="display-page break-words text-ink">{asset.name}</h2>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <StatusPill status={asset.status} />
-            <span className="data-readout text-[11px] text-ink-subtle">{asset._id}</span>
-          </div>
-        </div>
-
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <Button to="/assets">Back to Registry</Button>
-          {asset.isRenderable ? (
-            <>
-              <Button to={`/assets/${assetId}/mapping`}>Mapping Table</Button>
-              <Button to={`/assets/${assetId}/twin`} variant="primary">
-                Open Digital Twin
-              </Button>
-            </>
-          ) : null}
-        </div>
-      </div>
+      <PageHeader
+        title={asset.name}
+        actions={
+          <>
+            <Button to="/assets" icon={ArrowLeft}>
+              Back to registry
+            </Button>
+            {asset.isRenderable ? (
+              <>
+                <Button to={`/assets/${assetId}/mapping`}>Mapping table</Button>
+                <Button to={`/assets/${assetId}/twin`} variant="primary">
+                  Open digital twin
+                </Button>
+              </>
+            ) : null}
+          </>
+        }
+      >
+        <StatusPill status={asset.status} />
+        <span className="data-readout text-xs text-ink-muted" translate="no">
+          {asset._id}
+        </span>
+      </PageHeader>
 
       {uploadError ? (
         <ErrorState
-          title="Operation Failed"
+          title="Operation failed"
           message={uploadError}
           action={
             <Button size="sm" onClick={() => setUploadError('')}>
@@ -129,15 +152,15 @@ export function AssetDetailPage() {
         />
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-12">
         {/* ── Metadata ──────────────────────────────────────────────────────── */}
-        <Panel title="Record Metadata">
+        <Panel title="Record metadata" className="lg:col-span-7">
           <dl>
             <DetailRow label="Uploader">{asset.uploader}</DetailRow>
-            <DetailRow label="Source Format" mono>
+            <DetailRow label="Source format" mono>
               {asset.sourceType.toUpperCase()}
             </DetailRow>
-            <DetailRow label="Mesh Version" mono>
+            <DetailRow label="Mesh version" mono>
               v{asset.version}
             </DetailRow>
             <DetailRow label="Created" mono>
@@ -146,8 +169,8 @@ export function AssetDetailPage() {
                 timeStyle: 'short',
               }).format(new Date(asset.createdAt))}
             </DetailRow>
-            <DetailRow label="Renderable" mono>
-              {asset.isRenderable ? 'Yes' : 'No — awaiting converted mesh'}
+            <DetailRow label="Renderable">
+              {asset.isRenderable ? 'Yes' : 'No, awaiting a converted mesh'}
             </DetailRow>
             {asset.metadata?.notes ? (
               <DetailRow label="Notes">{asset.metadata.notes}</DetailRow>
@@ -156,92 +179,100 @@ export function AssetDetailPage() {
         </Panel>
 
         {/* ── Artefacts ─────────────────────────────────────────────────────── */}
-        <Panel title="File Artefacts">
-          <div className="space-y-5">
-            <div className="border border-line bg-sunken p-4">
-              <p className="label-micro mb-2">Source CAD — Provenance</p>
-              {asset.originalFile ? (
-                <dl className="space-y-1.5">
-                  <div className="flex justify-between gap-4">
-                    <dt className="font-sans text-[12px] text-ink-muted">Filename</dt>
-                    <dd className="data-readout min-w-0 truncate text-[12px] text-ink">
-                      {asset.originalFile.originalName}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="font-sans text-[12px] text-ink-muted">Size</dt>
-                    <dd className="data-readout text-[12px] text-ink">
-                      {formatBytes(asset.originalFile.sizeBytes)}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="font-sans text-[12px] text-ink-muted">SHA-256</dt>
-                    <dd className="data-readout min-w-0 truncate text-[11px] text-ink-subtle">
-                      {asset.originalFile.checksum.slice(0, 24)}…
-                    </dd>
-                  </div>
-                </dl>
-              ) : (
-                <p className="font-sans text-[12px] text-ink-muted">No source CAD file on record.</p>
-              )}
-            </div>
+        <Panel title="File artefacts" className="lg:col-span-5" flush>
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="File artefacts, scrollable">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="border-b border-line bg-sunken">
+                  <th scope="col" className="px-5 py-2.5 text-xs font-semibold text-ink-secondary">
+                    Artefact
+                  </th>
+                  <th scope="col" className="px-5 py-2.5 text-xs font-semibold text-ink-secondary">
+                    File
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-5 py-2.5 text-right text-xs font-semibold text-ink-secondary"
+                  >
+                    Size
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-line align-top">
+                  <th scope="row" className="px-5 py-3 text-left text-[13px] font-medium text-ink">
+                    Source CAD
+                    <span className="block text-xs font-normal text-ink-muted">Provenance only</span>
+                  </th>
+                  <td className="data-readout max-w-[14rem] px-5 py-3 text-ink">
+                    {asset.originalFile ? (
+                      <>
+                        <span className="block truncate">{asset.originalFile.originalName}</span>
+                        <span className="block truncate text-xs text-ink-muted" translate="no">
+                          SHA-256 {asset.originalFile.checksum.slice(0, 16)}…
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-sans text-[13px] text-ink-muted">None on record</span>
+                    )}
+                  </td>
+                  <td className="data-readout px-5 py-3 text-right text-ink-secondary">
+                    {asset.originalFile ? formatBytes(asset.originalFile.sizeBytes) : ''}
+                  </td>
+                </tr>
+                <tr className="align-top">
+                  <th scope="row" className="px-5 py-3 text-left text-[13px] font-medium text-ink">
+                    Converted mesh
+                    <span className="block text-xs font-normal text-ink-muted">Rendered</span>
+                  </th>
+                  <td className="data-readout max-w-[14rem] px-5 py-3 text-ink">
+                    {asset.convertedFile ? (
+                      <span className="block truncate">{asset.convertedFile.originalName}</span>
+                    ) : (
+                      <span className="font-sans text-[13px] text-ink-muted">
+                        None yet. Upload a <span translate="no">.glb</span> to enable the viewer.
+                      </span>
+                    )}
+                  </td>
+                  <td className="data-readout px-5 py-3 text-right text-ink-secondary">
+                    {asset.convertedFile ? formatBytes(asset.convertedFile.sizeBytes) : ''}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-            <div className="border border-line bg-sunken p-4">
-              <p className="label-micro mb-2">Converted Mesh — Rendered</p>
-              {asset.convertedFile ? (
-                <dl className="space-y-1.5">
-                  <div className="flex justify-between gap-4">
-                    <dt className="font-sans text-[12px] text-ink-muted">Filename</dt>
-                    <dd className="data-readout min-w-0 truncate text-[12px] text-ink">
-                      {asset.convertedFile.originalName}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="font-sans text-[12px] text-ink-muted">Size</dt>
-                    <dd className="data-readout text-[12px] text-ink">
-                      {formatBytes(asset.convertedFile.sizeBytes)}
-                    </dd>
-                  </div>
-                </dl>
-              ) : (
-                <p className="font-sans text-[12px] text-ink-muted">
-                  No mesh yet. Upload a <span translate="no">.glb</span> to enable the twin viewer.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-3 border-t border-line pt-4">
-              <FileField
-                label={asset.convertedFile ? 'Replace Converted Mesh' : 'Upload Converted Mesh'}
-                accept=".glb"
-                file={meshFile}
-                onFileChange={setMeshFile}
-                hint={
-                  asset.convertedFile
-                    ? 'Replacing bumps the version and busts the viewer cache. Existing sensor mappings are preserved.'
-                    : 'Binary glTF (.glb) only, up to 50 MB.'
-                }
-              />
-              <Button
-                variant="primary"
-                onClick={handleMeshUpload}
-                disabled={!meshFile || uploadState.isLoading}
-                loading={uploadState.isLoading}
-              >
-                Upload Mesh
-              </Button>
-            </div>
+          <div className="space-y-3 border-t border-line p-5">
+            <FileField
+              label={asset.convertedFile ? 'Replace converted mesh' : 'Upload converted mesh'}
+              accept=".glb"
+              file={meshFile}
+              onFileChange={setMeshFile}
+              hint={
+                asset.convertedFile
+                  ? 'Replacing bumps the version and busts the viewer cache. Existing sensor mappings are preserved.'
+                  : 'Binary glTF (.glb) only, up to 50 MB.'
+              }
+            />
+            <Button
+              variant="primary"
+              onClick={handleMeshUpload}
+              disabled={!meshFile || uploadState.isLoading}
+              loading={uploadState.isLoading}
+            >
+              Upload mesh
+            </Button>
           </div>
         </Panel>
       </div>
 
       {/* ── Danger zone ─────────────────────────────────────────────────────
           Destructive action behind an explicit confirmation step, never a
-          single immediate click. */}
-      <Panel title="Danger Zone">
+          single immediate click. Full alarm border, no fill. */}
+      <Panel title="Danger zone" tone="danger">
         {confirmingDelete ? (
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-sans text-[13px] text-ink">
+            <p className="text-[14px] text-ink">
               Soft-delete <strong>{asset.name}</strong>? Its mesh nodes and active sensor bindings
               will be retired. Stored files are kept for audit.
             </p>
@@ -255,17 +286,17 @@ export function AssetDetailPage() {
                 onClick={handleDelete}
                 loading={deleteState.isLoading}
               >
-                Confirm Delete
+                Confirm delete
               </Button>
             </div>
           </div>
         ) : (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-sans text-[13px] text-ink-muted">
+            <p className="text-[14px] text-ink-muted">
               Removes this asset from the registry. Reversible at the database level.
             </p>
             <Button size="sm" variant="danger" onClick={() => setConfirmingDelete(true)}>
-              Delete Asset
+              Delete asset
             </Button>
           </div>
         )}

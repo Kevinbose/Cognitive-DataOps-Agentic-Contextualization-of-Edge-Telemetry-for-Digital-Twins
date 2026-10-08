@@ -1,0 +1,6 @@
+google-genai>=2.29
+pymupdf>=1.28
+faiss-cpu>=1.15
+numpy>=2.0
+rank-bm25>=0.2.2
+python-dotenv>=1.0

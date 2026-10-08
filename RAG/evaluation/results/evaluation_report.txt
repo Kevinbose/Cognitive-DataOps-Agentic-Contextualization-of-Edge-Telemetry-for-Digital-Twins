@@ -1,0 +1,117 @@
+RAG Evaluation
+==============
+Generated: 2026-10-09T01:06:19
+Generation model: gemini-3.5-flash-lite   Embedding model: gemini-embedding-2   Prompt version: v3
+
+Documents
+---------
+Press Stamp: 5
+Robot Weld: 5
+
+Chunks
+------
+Total: 261
+Press Stamp: 122   Robot Weld: 139
+
+Retrieval (62 queries, hit = a chunk from a gold section in the top k)
+---------
+Recall@1:  83.9%
+Recall@3:  96.8%
+Recall@5:  98.4%
+Recall@10: 100.0%
+MRR@10:    0.904
+Answer values present in top 5: 100.0% (9 queries with a checked value)
+
+Multi-step diagnostic queries (12): evidence for the stages threshold / fault / action
+  Mean stage coverage in the context given to the model:  86.1%
+  All stages covered in the context:                      66.7%
+Gold section present in the context given to the model (all queries): 98.4%
+
+Recall@5 by group:
+  case_based                   100.0%  (n=6)
+  component_identification     100.0%  (n=2)
+  diagnostic_procedure         100.0%  (n=6)
+  fault_differentiation         50.0%  (n=2)
+  fault_identification         100.0%  (n=7)
+  maintenance                  100.0%  (n=8)
+  multi_step_diagnostic        100.0%  (n=12)
+  operating_conditions         100.0%  (n=5)
+  press-stamp-01               100.0%  (n=31)
+  robot-weld-01                 96.8%  (n=31)
+  telemetry_interpretation     100.0%  (n=4)
+  threshold                    100.0%  (n=6)
+  troubleshooting              100.0%  (n=4)
+
+Ablation (same queries):
+  hybrid + rerank  R@1  83.9%  R@3  96.8%  R@5  98.4%  R@10 100.0%  MRR 0.904
+  dense only       R@1  79.0%  R@3  95.2%  R@5  98.4%  R@10 100.0%  MRR 0.878
+  BM25 only        R@1  59.7%  R@3  80.6%  R@5  85.5%  R@10  95.2%  MRR 0.714
+
+Queries missed at k=5: 1
+  RR10 (first relevant rank 8): How can gearbox wear be distinguished from lubrication degradation on robot-weld-01?
+
+Generation (64 questions, deterministic checks)
+----------
+Answer Correctness:        92.2%
+  answerable questions:    90.7%
+Multi-step diagnostic:     75.0%  (n=16; every step of the chain must be right)
+  diagnostic headings used: 95.8%
+Groundedness:              98.4%  (every number traceable to the evidence, and a citation)
+Unsupported Claims:        0.0%  (answers with a number not in the evidence)
+Citation rate:             98.4%
+False refusals:            0.0%
+
+Correctness by category:
+  action         100.0%  (n=6)
+  component      100.0%  (n=3)
+  diagnostic      75.0%  (n=16)
+  fault           80.0%  (n=5)
+  inspection     100.0%  (n=3)
+  insufficient   100.0%  (n=8)
+  isolation      100.0%  (n=6)
+  threshold      100.0%  (n=17)
+Correctness by machine:
+  press-stamp-01  90.6%
+  robot-weld-01   93.8%
+
+Gemini judge, second opinion (64 answers):
+  Correct:            100.0%
+  Correct or partial: 100.0%
+  Unsupported claims: 0.0%
+
+Threshold Accuracy (17 numeric questions)
+------------------
+100.0%
+
+Hallucination Tests (10 questions with no answer in the documents)
+-------------------
+Insufficient-information accuracy: 100.0%
+
+Failed generation questions: 5
+  GP10: missing=['3.2'] forbidden=[] declined=False
+  GD01: missing=['controlled stop | stop'] forbidden=[] declined=False
+  GD04: missing=['warning | L2'] forbidden=[] declined=False
+  GD07: missing=['supervisor'] forbidden=[] declined=False
+  GD10: missing=['0.4'] forbidden=[] declined=False
+
+Machine Isolation (126 queries: every retrieved chunk from the asked machine)
+-----------------
+100.0%
+Answers containing a value of the other machine: 0.0%
+
+Overall
+-------
+recall@5                 target  90.0%   result  98.4%   PASS
+answer_correctness       target  90.0%   result  92.2%   PASS
+diagnostic_correctness   target  90.0%   result  75.0%   FAIL
+threshold_accuracy       target  90.0%   result 100.0%   PASS
+insufficient_accuracy    target  90.0%   result 100.0%   PASS
+groundedness             target  90.0%   result  98.4%   PASS
+machine_isolation        target  95.0%   result 100.0%   PASS
+
+Result: FAIL
+
+API usage logged today
+----------------------
+gemini-3.5-flash-lite: 238 requests (budget 350, hard limit 500)
+gemini-embedding-2: 392 requests (budget 800, hard limit 1000)

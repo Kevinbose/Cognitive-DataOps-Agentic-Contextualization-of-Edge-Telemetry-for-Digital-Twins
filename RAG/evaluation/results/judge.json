@@ -1,0 +1,395 @@
+{
+  "verdicts": {
+    "GP01": {
+      "id": "GP01",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP02": {
+      "id": "GP02",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP03": {
+      "id": "GP03",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP04": {
+      "id": "GP04",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP05": {
+      "id": "GP05",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP06": {
+      "id": "GP06",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP07": {
+      "id": "GP07",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP08": {
+      "id": "GP08",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP09": {
+      "id": "GP09",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP10": {
+      "id": "GP10",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states bearing wear never reaches 4.0 mm/s alarm."
+    },
+    "GP11": {
+      "id": "GP11",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately identifies component, inspection, and corrective action."
+    },
+    "GP12": {
+      "id": "GP12",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately identifies early bearing wear and inspection steps."
+    },
+    "GP13": {
+      "id": "GP13",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately diagnoses clogged filter at L2 and recommended action."
+    },
+    "GP14": {
+      "id": "GP14",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states to check lubrication and replace filter first."
+    },
+    "GP15": {
+      "id": "GP15",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately lists verification P60 and V60 ranges."
+    },
+    "GP16": {
+      "id": "GP16",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately lists defect line frequencies and bins."
+    },
+    "GP17": {
+      "id": "GP17",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately diagnoses process/die overload and action."
+    },
+    "GP18": {
+      "id": "GP18",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly identifies notification, timeframe, and supervisor role."
+    },
+    "GP19": {
+      "id": "GP19",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GP20": {
+      "id": "GP20",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GR01": {
+      "id": "GR01",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GR02": {
+      "id": "GR02",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GR03": {
+      "id": "GR03",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GR04": {
+      "id": "GR04",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GR05": {
+      "id": "GR05",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GR06": {
+      "id": "GR06",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GR07": {
+      "id": "GR07",
+      "correct": "yes",
+      "unsupported": false,
+      "note": ""
+    },
+    "GR08": {
+      "id": "GR08",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Matches required actions for critical torque sample."
+    },
+    "GR09": {
+      "id": "GR09",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately gives r=0.48 for warn and r=0.82 for alarm."
+    },
+    "GR10": {
+      "id": "GR10",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states 10 minutes."
+    },
+    "GR11": {
+      "id": "GR11",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Identifies axis 4 gearbox correctly."
+    },
+    "GR12": {
+      "id": "GR12",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately identifies F09 thermal or F02 lubrication loss."
+    },
+    "GR13": {
+      "id": "GR13",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly identifies F07 collision."
+    },
+    "GR14": {
+      "id": "GR14",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately details ripple, ratios, and inspection differences."
+    },
+    "GR15": {
+      "id": "GR15",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Matches all requested post-maintenance pass criteria."
+    },
+    "GR16": {
+      "id": "GR16",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Matches required corrective actions for gearbox wear."
+    },
+    "GR17": {
+      "id": "GR17",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately answers typical idle offset and escalation threshold."
+    },
+    "GR18": {
+      "id": "GR18",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly identifies normal warm-up effect with no fault."
+    },
+    "GR19": {
+      "id": "GR19",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly identifies roles (specialist and safety officer) and timing (immediately)."
+    },
+    "GR20": {
+      "id": "GR20",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states 8 s weld cycle and 500 ms publish interval."
+    },
+    "GU01": {
+      "id": "GU01",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Declares information not available per reference."
+    },
+    "GU02": {
+      "id": "GU02",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Declares information not available per reference."
+    },
+    "GU03": {
+      "id": "GU03",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Declares information not available per reference."
+    },
+    "GU04": {
+      "id": "GU04",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Declares information not available per reference."
+    },
+    "GU05": {
+      "id": "GU05",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Declares information not available per reference."
+    },
+    "GU06": {
+      "id": "GU06",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states oil temperature is not measured and not available."
+    },
+    "GU07": {
+      "id": "GU07",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states weld current is not documented."
+    },
+    "GU08": {
+      "id": "GU08",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states interval basis is OEM-specific and no hours given."
+    },
+    "GX01": {
+      "id": "GX01",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states lube oil pressure channel is not present on robot."
+    },
+    "GX02": {
+      "id": "GX02",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states press-stamp-01 has no axis 4 servo torque channel."
+    },
+    "GX03": {
+      "id": "GX03",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly lists all three warning thresholds."
+    },
+    "GX04": {
+      "id": "GX04",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly states warning (26 Nm) and alarm (30 Nm) thresholds."
+    },
+    "GX05": {
+      "id": "GX05",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly identifies F02 BEARING_WEAR and handheld analyser inspection."
+    },
+    "GX06": {
+      "id": "GX06",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly identifies F02 lubrication degradation and gives OEM relubrication/seal action."
+    },
+    "GD01": {
+      "id": "GD01",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "All requested elements correctly classified and answered."
+    },
+    "GD02": {
+      "id": "GD02",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correct classification, fault, differentiation, and verification."
+    },
+    "GD03": {
+      "id": "GD03",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately identifies F12 transducer fault and data path check."
+    },
+    "GD04": {
+      "id": "GD04",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly prioritizes lubrication/filter first for mixed evidence."
+    },
+    "GD05": {
+      "id": "GD05",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly identifies unverified repair and next step (T2)."
+    },
+    "GD06": {
+      "id": "GD06",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately classifies level L2, fault F01, and verification."
+    },
+    "GD07": {
+      "id": "GD07",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly identifies L3 alarm, notification, and response."
+    },
+    "GD08": {
+      "id": "GD08",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately identifies brake drag (F03) and inspection/action."
+    },
+    "GD09": {
+      "id": "GD09",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Correctly avoids mechanical diagnosis and prioritizes data path."
+    },
+    "GD10": {
+      "id": "GD10",
+      "correct": "yes",
+      "unsupported": false,
+      "note": "Accurately identifies transition to gearbox wear (F01) and gives correct actions."
+    }
+  },
+  "fresh_calls": 8,
+  "n": 64,
+  "summary": {
+    "judge_correct": 1.0,
+    "judge_correct_or_partial": 1.0,
+    "judge_unsupported_rate": 0.0
+  }
+}

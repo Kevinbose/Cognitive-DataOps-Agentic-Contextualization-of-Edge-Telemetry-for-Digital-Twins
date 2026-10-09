@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 150" width="1200" height="150" role="img" aria-labelledby="t">
+  <title id="t">The project in numbers: 392 tests, 16 agent tools, 261 manual passages, 2,062 named parts, 5 states of a machine</title>
+  <rect width="1200" height="150" fill="#F3F4F1"/>
+  <rect x="0" y="0" width="1200" height="4" fill="#151D1C"/>
+  <rect x="0" y="146" width="1200" height="2" fill="#BABEB6"/>
+  <g font-family="Segoe UI, Arial, sans-serif" fill="#151D1C" text-anchor="start">
+    <g transform="translate(40,0)">
+      <text y="82" font-size="56" font-weight="700">392</text>
+      <text y="112" font-size="17" fill="#35413F">tests: 283 server, 69 client, 40 agent</text>
+    </g>
+    <line x1="280" y1="26" x2="280" y2="124" stroke="#BABEB6"/>
+    <g transform="translate(320,0)">
+      <text y="82" font-size="56" font-weight="700">16</text>
+      <text y="112" font-size="17" fill="#35413F">read and point tools, none that act</text>
+    </g>
+    <line x1="600" y1="26" x2="600" y2="124" stroke="#BABEB6"/>
+    <g transform="translate(640,0)">
+      <text y="82" font-size="56" font-weight="700">261</text>
+      <text y="112" font-size="17" fill="#35413F">manual passages, hybrid search</text>
+    </g>
+    <line x1="900" y1="26" x2="900" y2="124" stroke="#BABEB6"/>
+    <g transform="translate(940,0)">
+      <text y="82" font-size="56" font-weight="700">2,062</text>
+      <text y="112" font-size="17" fill="#35413F">named parts in the plant model</text>
+    </g>
+  </g>
+</svg>

@@ -1,6 +1,21 @@
-# Cognitive DataOps
+<p align="center">
+  <img src="docs/images/banner.svg" alt="Cognitive DataOps: edge telemetry flows through MQTT into a digital twin, where a Python agent diagnoses faults and points at the failing part" width="100%">
+</p>
 
-**Agentic Contextualization of Edge Telemetry for Digital Twins**
+<p align="center">
+  <img alt="Node 22" src="https://img.shields.io/badge/Node-22-135E66?style=flat-square&logo=nodedotjs&logoColor=white">
+  <img alt="Python 3.12" src="https://img.shields.io/badge/Python-3.12-135E66?style=flat-square&logo=python&logoColor=white">
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-135E66?style=flat-square&logo=react&logoColor=white">
+  <img alt="LangGraph" src="https://img.shields.io/badge/agent-LangGraph-135E66?style=flat-square">
+  <img alt="MCP" src="https://img.shields.io/badge/tools-MCP-135E66?style=flat-square">
+  <img alt="MQTT" src="https://img.shields.io/badge/edge-MQTT%20%2B%20ESP32-135E66?style=flat-square">
+  <img alt="Tests 392" src="https://img.shields.io/badge/tests-392%20passing-1B6A39?style=flat-square">
+  <img alt="Capstone" src="https://img.shields.io/badge/VIT%20Chennai-capstone-151D1C?style=flat-square">
+</p>
+
+<p align="center"><img src="docs/images/stats.svg" alt="392 tests, 16 agent tools, 261 manual passages, 2,062 named parts" width="100%"></p>
+
+> **In one sentence:** a machine starts to fail, the twin notices before the alarm does, an agent works out why from the manuals and points at the part, and you can ask it questions while looking at the plant.
 
 A web-native digital twin for a car plant. You upload a 3D model of the plant, connect machines to it, bind their live telemetry channels to parts of the model, and watch a welding robot and a stamping press stream into the twin in real time. Two ESP32 boards play those machines and publish over MQTT.
 
@@ -8,6 +23,23 @@ On top of that sits an **agentic layer in Python**. When a channel crosses a lim
 
 > **Capstone project**, B.Tech CSE, VIT Chennai
 > Kevin Bose J (23BCE5105), Joseph Shalom A (23BCE1078), Shubham Chattopadhyay (23BCE1671)
+
+---
+
+## The plant
+
+Every image below is a real render of `car_factory_updated.glb`, the plant model this project generates in Blender at true scale (1 unit is 1 metre). Every part the agent can point at has a name and a label.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/factory/overview.jpg" alt="Overview of the whole plant"><br><sub><b>The plant.</b> Press shop, body shop, paint shop, assembly, yards and utilities.</sub></td>
+    <td width="50%"><img src="docs/images/factory/press_hero.jpg" alt="The stamping press with its lube unit, filter and main bearing"><br><sub><b>The press.</b> <code>PRESS_LUBE_FILTER</code>, <code>PRESS_MAIN_BEARING</code>, <code>PRESS_MAIN_MOTOR</code>: where the clog and the bearing wear show up.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/factory/robot.jpg" alt="The six-axis welding robot with its spot-welding gun"><br><sub><b>The robot.</b> <code>ROBOT_A4_SERVO_MOTOR</code> carries the torque channel the gearbox-wear diagnosis reads.</sub></td>
+    <td width="50%"><img src="docs/images/factory/top.jpg" alt="Top view of the plant layout"><br><sub><b>The layout.</b> Exclusion zones and fences drawn to the safety distances in the floor plan.</sub></td>
+  </tr>
+</table>
 
 ---
 
@@ -70,17 +102,54 @@ Still to do by hand: a rehearsal of [`docs/demo-script.md`](docs/demo-script.md)
 
 ## How the pieces fit
 
-```
-ESP32 gateway (robot)  \                                          +--> React twin (R3F, Redux)  :5173
-                        >--> MQTT broker --> Node API  :5000 -----+      machines, live values, spectrum,
-ESP32 gateway (press)  /   (Mosquitto or     validate, store,            binding, 3D highlights,
-                            HiveMQ Cloud)    broadcast, detector         reports, assistant
-                                               |        ^  |
-                                   MongoDB  <--+   MCP  |  | investigations, chat (SSE)
-                         assets, bindings,              |  v
-                         devices, telemetry,        Python agent  :8100
-                         investigations, reports    LangGraph lanes, fault scoring,
-                                                    RAG/ manuals, Gemini (optional)
+```mermaid
+flowchart LR
+    subgraph EDGE["Edge"]
+        R["ESP32 or simulator<br/>welding robot"]
+        P["ESP32 or simulator<br/>stamping press"]
+    end
+    B(["MQTT broker<br/>Mosquitto or HiveMQ"])
+    subgraph NODE["Node API :5000"]
+        direction TB
+        V["validate and store"]
+        D["anomaly detector<br/>threshold and drift"]
+        M["MCP tool server<br/>read and point only"]
+        S["reports and<br/>chat relay"]
+    end
+    DB[("MongoDB<br/>assets, bindings,<br/>time series, reports")]
+    subgraph AGENT["Python agent :8100"]
+        direction TB
+        L1["diagnose lane<br/>6 steps"]
+        L2["converse lane<br/>tools or rules"]
+        K["RAG: manuals<br/>dense + keyword"]
+        G["Gemini 3.5 Flash Lite<br/>optional"]
+    end
+    W["React twin :5173<br/>3D model, panels,<br/>assistant"]
+
+    R --> B
+    P --> B
+    B --> V
+    V --> DB
+    V --> D
+    D -- "investigation" --> L1
+    L1 -- "MCP reads" --> M
+    L2 -- "MCP reads and points" --> M
+    L1 --> K
+    L2 --> K
+    L1 -.-> G
+    L2 -.-> G
+    L1 -- "report" --> S
+    S --> DB
+    W <-- "REST, Socket.io, SSE" --> NODE
+    W -. "chat" .-> S
+    S -. "chat stream" .-> L2
+
+    classDef edge fill:#F9FAF8,stroke:#BABEB6,color:#151D1C
+    classDef core fill:#135E66,stroke:#135E66,color:#F9FAF8
+    classDef agent fill:#151D1C,stroke:#151D1C,color:#F9FAF8
+    class R,P,B edge
+    class V,D,M,S core
+    class L1,L2,K,G agent
 ```
 
 The browser talks only to the Node API. The agent never sees the browser: it reads the plant through Node's MCP endpoint with a shared service key, and Node relays the chat stream and pushes reports and "point at this part" commands over Socket.io.
@@ -225,13 +294,112 @@ CDO_API_ORIGIN=http://127.0.0.1:5055 npx vite client --port 5174
 
 The agentic part is Python (`services/agent/`, FastAPI on port 8100, LangGraph). Node only supplies data and carries results: it serves read and point tools over MCP, runs the anomaly rules, stores investigations and reports, and relays the chat stream. The full design is in [`docs/phase5-agent-blueprint.md`](docs/phase5-agent-blueprint.md).
 
+### From a slow drift to a cited report
+
+<p align="center"><img src="docs/images/agent-pipeline.svg" alt="The diagnose lane: gather, analyse, retrieve, ground, write, publish" width="100%"></p>
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant M as Press (ESP32 or simulator)
+    participant N as Node API and detector
+    participant A as Python agent
+    participant R as Manuals (RAG)
+    participant G as Gemini
+    participant U as Browser
+
+    M->>N: telemetry every 0.5 s (via MQTT)
+    Note over N: 60 s mean drifts 6 sigma from baseline,<br/>still inside the limits
+    N->>N: open investigation (one per machine)
+    N-->>U: agent:status analysing
+    N->>A: POST /v1/investigations (202)
+    A->>N: MCP: catalogue, raw window, spectrum, bindings
+    A->>A: features and fault scoring, in code
+    A->>R: retrieve signature and maintenance pages
+    R-->>A: ranked passages with page numbers
+    A->>G: word the headline and summary
+    G-->>A: text, kept only if the guard accepts it
+    A->>N: MCP: post_diagnostic_report
+    N-->>U: agent:alert (headline, level, parts)
+    N-->>U: banner, report panel, parts pulse red
+```
+
+### Life of an investigation
+
+```mermaid
+stateDiagram-v2
+    [*] --> analysing: detector fires
+    analysing --> reported: report published
+    analysing --> agent_unavailable: agent not reachable
+    agent_unavailable --> analysing: agent starts, catches up within a minute
+    analysing --> failed: a step failed, reason recorded
+    analysing --> analysing: escalated warn to alarm, still one investigation
+    reported --> resolved: healthy for 60 s
+    failed --> resolved: healthy for 60 s
+    resolved --> [*]: cooldown before the next one
+```
+
+### How it tells the faults apart
+
+The agent does not guess from one number. Every fault the manuals describe is a set of tests, and each test supports some faults and rules out others. The three questions that matter on the press:
+
+```mermaid
+flowchart TD
+    S["Lube pressure P60"] -->|"at or below 4.30 bar"| Low["Lubrication fault family"]
+    S -->|"4.45 to 4.55 bar"| Norm["Pressure normal"]
+    Low --> H{"Floor above 300 Hz<br/>HB300 at least 0.24 mm/s<br/>and PMR300 below 2.5?"}
+    H -->|"yes, vibration also rising"| F01["F01 CLOGGED FILTER<br/>replace the cartridge"]
+    H -->|"no, vibration flat"| F12["F12 pressure transducer<br/>verify the sensor first"]
+    Norm --> V{"Vibration V60 rising<br/>with 5 of 5 defect lines<br/>and PMR300 above 3?"}
+    V -->|"yes, never above 4.0 mm/s"| F02["F02 BEARING WEAR<br/>plan the replacement"]
+    V -->|"no"| Other["F10, F11, F13:<br/>alignment, looseness, sensor"]
+    Low -.->|"and discrete lines too"| F16["F16 both together<br/>filter first, then bearing"]
+
+    classDef hit fill:#135E66,stroke:#135E66,color:#F9FAF8
+    classDef ask fill:#F9FAF8,stroke:#777D74,color:#151D1C
+    class F01,F02,F16,F12 hit
+    class H,V ask
+```
+
+The robot follows the same idea with different tests: gearbox wear raises the cycle mean, adds a 0.75 Hz ripple (the sixth harmonic) that a healthy axis does not have, and moves the noise and the tool-centre-point deviation in fixed ratios to the mean shift (0.20 to 0.40, 0.08 to 0.20 and 0.03 to 0.08 per unit). A friction or load fault raises the mean without the ripple; a payload or program change moves the swing.
+
+**What the agent measured on the simulator's own physics** (confidence of the right root cause at 30, 60 and 100 percent severity):
+
+```mermaid
+xychart-beta
+    title "Right root cause, confidence in percent"
+    x-axis ["30 percent", "60 percent", "100 percent"]
+    y-axis "Confidence" 0 --> 100
+    line [85, 85, 92]
+    line [95, 95, 95]
+    line [94, 91, 91]
+```
+
+The three lines are, in order of the table below: the clogged filter, bearing wear and gearbox wear. A healthy machine gets no root cause at all.
+
+### Two lanes, one rule
+
+```mermaid
+flowchart LR
+    subgraph Code["Decided in code, reproducible"]
+        a["features"] --> b["fault scores"] --> c["root cause, confidence,<br/>alternatives, actions,<br/>target parts"]
+    end
+    subgraph Model["Worded by Gemini, optional"]
+        d["headline and summary"] --> e{"guard"}
+    end
+    c --> d
+    e -->|"names the root cause,<br/>cites retrieved sources only,<br/>no invented number"| ok["model text kept"]
+    e -->|"anything else"| t["template text used"]
+    ok --> out["report"]
+    t --> out
+    c --> out
+```
+
 **Diagnose lane.** `gather` (catalogue, two minutes of raw samples, baselines, spectrum, bindings), `analyse` (the documented features and fault scoring), `retrieve` (two queries to the manuals), `ground` (the failing component's meshes, from the part tags in the model and the bindings), `write` (facts decided in code; Gemini may only word them, behind a guard that rejects invented numbers or unretrieved sources), `publish`. Any failing step records the investigation as failed; nothing is lost silently.
 
 **Converse lane.** Each turn packs the scope (the twin's own machines from the device registry, live readings, open investigations, the selected part) and answers with Gemini and up to four tool rounds, or with a rule-based answerer when no key or quota is available. Tools refuse machines that are not on the twin, so an empty twin is reported as empty. Every step streams to the browser as it happens.
 
-**Measured on the simulator's own physics:**
-
-| Case | Root cause found | Confidence | Level |
+| Case (the chart's lines, in order) | Root cause found | Confidence | Level |
 |---|---|---|---|
 | Clogged filter at 30, 60, 100 percent | F01 CLOGGED_FILTER | 85 to 92 percent | watch, warning, critical |
 | Bearing wear at 30, 60, 100 percent | F02 BEARING_WEAR (never reaches the vibration alarm) | 95 percent | watch, watch, warning |

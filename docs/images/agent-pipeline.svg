@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380" role="img" aria-labelledby="t d">
+  <title id="t">The diagnose lane</title>
+  <desc id="d">Six steps: gather, analyse, retrieve, ground, write, publish. Any step that fails ends in a recorded failure.</desc>
+  <rect width="1200" height="380" fill="#F3F4F1"/>
+  <rect x="0" y="0" width="1200" height="4" fill="#151D1C"/>
+  <g font-family="Segoe UI, Arial, sans-serif" fill="#151D1C">
+    <text x="40" y="44" font-size="22" font-weight="700">The diagnose lane</text>
+    <text x="40" y="68" font-size="15" fill="#56625F">An investigation opens in Node; these six steps turn it into a cited report. Reads go through MCP tools only.</text>
+
+    <!-- step boxes -->
+    <g stroke="#BABEB6" stroke-width="1.5">
+      <rect x="40"  y="96" width="170" height="150" fill="#F9FAF8"/>
+      <rect x="226" y="96" width="170" height="150" fill="#135E66" stroke="#135E66"/>
+      <rect x="412" y="96" width="170" height="150" fill="#F9FAF8"/>
+      <rect x="598" y="96" width="170" height="150" fill="#F9FAF8"/>
+      <rect x="784" y="96" width="170" height="150" fill="#F9FAF8"/>
+      <rect x="970" y="96" width="190" height="150" fill="#151D1C" stroke="#151D1C"/>
+    </g>
+
+    <g font-size="14">
+      <text x="56" y="124" font-size="13" fill="#56625F">1</text>
+      <text x="56" y="148" font-size="19" font-weight="700">gather</text>
+      <text x="56" y="176">catalogue, 2 min of</text><text x="56" y="194">raw samples, baselines,</text><text x="56" y="212">spectrum, bindings</text>
+
+      <text x="242" y="124" font-size="13" fill="#F9FAF8" opacity="0.8">2</text>
+      <text x="242" y="148" font-size="19" font-weight="700" fill="#F9FAF8">analyse</text>
+      <text x="242" y="176" fill="#F9FAF8">features from the</text><text x="242" y="194" fill="#F9FAF8">manuals' definitions,</text><text x="242" y="212" fill="#F9FAF8">fault signatures scored</text>
+
+      <text x="428" y="124" font-size="13" fill="#56625F">3</text>
+      <text x="428" y="148" font-size="19" font-weight="700">retrieve</text>
+      <text x="428" y="176">two queries to the</text><text x="428" y="194">machine's manuals,</text><text x="428" y="212">dense and keyword</text>
+
+      <text x="614" y="124" font-size="13" fill="#56625F">4</text>
+      <text x="614" y="148" font-size="19" font-weight="700">ground</text>
+      <text x="614" y="176">failing component to</text><text x="614" y="194">real meshes, from the</text><text x="614" y="212">model's part tags</text>
+
+      <text x="800" y="124" font-size="13" fill="#56625F">5</text>
+      <text x="800" y="148" font-size="19" font-weight="700">write</text>
+      <text x="800" y="176">facts fixed in code;</text><text x="800" y="194">Gemini words them</text><text x="800" y="212">behind a guard</text>
+
+      <text x="986" y="124" font-size="13" fill="#F9FAF8" opacity="0.8">6</text>
+      <text x="986" y="148" font-size="19" font-weight="700" fill="#F9FAF8">publish</text>
+      <text x="986" y="176" fill="#F9FAF8">stored, alert raised,</text><text x="986" y="194" fill="#F9FAF8">banner and report</text><text x="986" y="212" fill="#F9FAF8">appear on the twin</text>
+    </g>
+
+    <!-- arrows -->
+    <g stroke="#151D1C" stroke-width="2.5" fill="none">
+      <path d="M210 171 H226"/><path d="M396 171 H412"/><path d="M582 171 H598"/><path d="M768 171 H784"/><path d="M954 171 H970"/>
+    </g>
+
+    <!-- failure rail -->
+    <path d="M125 246 V292 H1065 V246" stroke="#B3261E" stroke-width="2" fill="none" stroke-dasharray="6 5"/>
+    <rect x="395" y="278" width="410" height="28" fill="#F3F4F1"/>
+    <text x="600" y="298" text-anchor="middle" font-size="15" fill="#B3261E">any step fails: the investigation is marked failed, never silent</text>
+
+    <!-- under-box facts -->
+    <g font-size="14" fill="#35413F">
+      <text x="40" y="340">Facts decided in code: root cause, confidence, alternatives, tests, actions, target parts.</text>
+      <text x="40" y="362">Words from the model: the headline, the summary and the steps, and only if the guard accepts them.</text>
+    </g>
+  </g>
+</svg>

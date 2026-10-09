@@ -17,6 +17,7 @@ import { getBindingIndexStats } from '../services/bindingIndex.service.js';
 import { getIngestStats } from '../services/telemetry.service.js';
 import { getSocketStats } from '../services/websocket.service.js';
 import { sendOk } from '../utils/ApiResponse.js';
+import { agentRouter, assistantRouter, investigationRouter, reportRouter } from './agent.routes.js';
 import { assetRouter } from './asset.routes.js';
 import { deviceRouter } from './device.routes.js';
 import { meshNodeRouter } from './meshNode.routes.js';
@@ -76,5 +77,9 @@ apiRouter.use('/mesh-nodes', meshNodeRouter);
 apiRouter.use('/sensor-bindings', sensorBindingRouter);
 apiRouter.use('/devices', deviceRouter);
 apiRouter.use('/telemetry', telemetryRouter);
+apiRouter.use('/agent', agentRouter);
+apiRouter.use('/investigations', investigationRouter);
+apiRouter.use('/reports', reportRouter);
+apiRouter.use('/assistant', assistantRouter);
 
 export default apiRouter;

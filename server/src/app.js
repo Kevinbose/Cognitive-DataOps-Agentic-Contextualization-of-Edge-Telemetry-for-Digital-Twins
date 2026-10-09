@@ -21,6 +21,7 @@ import { STORAGE_ROOT } from './config/storage.config.js';
 import { errorHandler } from './middleware/errorHandler.middleware.js';
 import { notFoundHandler } from './middleware/notFound.middleware.js';
 import { apiRouter } from './routes/index.js';
+import { mcpRouter } from './routes/mcp.routes.js';
 import { ApiError } from './utils/ApiError.js';
 
 /**
@@ -113,6 +114,9 @@ export function createApp() {
   /* ─── API ────────────────────────────────────────────────────────────────── */
 
   app.use('/api/v1', apiRouter);
+
+  // Phase 5: the agent's Model Context Protocol endpoint (service-to-service).
+  app.use('/mcp', mcpRouter);
 
   /**
    * Root banner. Purely a developer convenience so hitting the bare origin

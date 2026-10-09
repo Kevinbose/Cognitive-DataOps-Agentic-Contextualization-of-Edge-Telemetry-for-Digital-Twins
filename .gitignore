@@ -30,6 +30,20 @@ build/
 # ─────────────────────────────────────────────────────────────────────────────
 /storage/assets/*
 !/storage/assets/.gitkeep
+# The shared agent service key, created on first start when AGENT_SERVICE_KEY is unset.
+/storage/.agent/
+
+# Diagnosis agent (services/agent): its virtual environment, the chat thread
+# store and Python caches. Recreate the environment with: npm run agent:setup
+/services/agent/.venv/
+/services/agent/.data/
+__pycache__/
+.pytest_cache/
+
+# Blender factory builder output (the .glb, its registry, generated textures,
+# review renders). Rebuild with: blender -b -P blender/build_car_factory.py
+/blender/out/
+*.blend1
 
 # Logs
 *.log

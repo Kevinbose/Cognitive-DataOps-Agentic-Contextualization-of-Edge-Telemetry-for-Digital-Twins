@@ -35,6 +35,9 @@ let io = null;
 /** @type {(() => void)|null} */
 let unsubscribeEvents = null;
 
+/** Assistant session ids are client-generated; keep them short and plain. */
+export const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
+
 /**
  * Attach Socket.io to an HTTP server.
  *
@@ -79,6 +82,14 @@ export function attachWebsocket(httpServer, { getSnapshot, allowedOrigins = conf
 
     socket.on('unsubscribe:asset', (assetId) => {
       if (typeof assetId === 'string') void socket.leave(`asset:${assetId}`);
+    });
+
+    // A browser tab's assistant session, so a chat answer that moves the camera
+    // reaches the tab that asked and no other.
+    socket.on('subscribe:session', (sessionId) => {
+      if (typeof sessionId === 'string' && SESSION_ID_PATTERN.test(sessionId)) {
+        void socket.join(`session:${sessionId}`);
+      }
     });
   });
 
@@ -142,6 +153,37 @@ export function emitTwinInvalidate(assetId) {
 /**
  * @returns {{clients: number}} Counters for `/health`.
  */
+/**
+ * Progress of an investigation ("analysing press-stamp-01"). Broadcast: the
+ * plant-wide assistant on the registry page shows every twin's investigations.
+ *
+ * @param {{investigationId: string, machineId: string, assetId: string|null, status: string, severity?: string, sensorId?: string}} payload
+ */
+export function emitAgentStatus(payload) {
+  io?.emit('agent:status', payload);
+}
+
+/**
+ * A finished diagnosis: the alert the twin shows as a banner.
+ *
+ * @param {object} alert - Summary of the report (no evidence body).
+ */
+export function emitAgentAlert(alert) {
+  io?.emit('agent:alert', alert);
+}
+
+/**
+ * 3D commands from the agent (highlight, focus, select). Sent to one assistant
+ * session when given, otherwise to every tab that has the twin open.
+ *
+ * @param {{assetId: string, sessionId?: string|null, commands: object[]}} payload
+ */
+export function emitUiCommand({ assetId, sessionId = null, commands }) {
+  if (!io) return;
+  const room = sessionId ? `session:${sessionId}` : `asset:${assetId}`;
+  io.to(room).emit('ui:command', { assetId, commands });
+}
+
 export function getSocketStats() {
   return { clients: io?.engine?.clientsCount ?? 0 };
 }
@@ -172,6 +214,9 @@ export default {
   emitDeviceUpdate,
   emitDeviceAck,
   emitTwinInvalidate,
+  emitAgentStatus,
+  emitAgentAlert,
+  emitUiCommand,
   getSocketStats,
   closeWebsocket,
 };

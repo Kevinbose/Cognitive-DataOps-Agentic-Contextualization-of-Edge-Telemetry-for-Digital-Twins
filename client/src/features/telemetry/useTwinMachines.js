@@ -27,9 +27,16 @@ export function useTwinMachines(assetId) {
 
   return useMemo(
     () => ({
+      // Everything added to this twin, whatever its state: an offline machine
+      // here is news ("the press dropped off"), so it stays visible.
       attached: devices.filter((device) => device.assetId === assetId),
-      available: devices.filter((device) => !device.assetId),
-      elsewhere: devices.filter((device) => device.assetId && device.assetId !== assetId),
+      // Only machines that are online now and on no twin can be added. An
+      // offline gateway nobody has claimed is noise in this list.
+      available: devices.filter((device) => !device.assetId && device.state === 'online'),
+      // Live machines claimed by another twin, so the operator knows where they went.
+      elsewhere: devices.filter(
+        (device) => device.assetId && device.assetId !== assetId && device.state === 'online',
+      ),
     }),
     [devices, assetId],
   );

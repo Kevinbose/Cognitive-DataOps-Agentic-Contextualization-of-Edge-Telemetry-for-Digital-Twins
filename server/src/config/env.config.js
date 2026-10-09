@@ -207,6 +207,10 @@ const MB = 1024 * 1024;
  *   Ingestion and persistence tuning.
  * @property {boolean}  enableDeviceCommands - Whether `POST /devices/:id/commands` is live.
  * @property {number}   commandMinIntervalMs - Per-device command rate limit; 0 disables it.
+ * @property {{enabled: boolean, url: string, serviceKey: string|null, keyFile: string, requestTimeoutMs: number}} agent
+ *   The diagnosis agent service and the shared service key.
+ * @property {{enabled: boolean, holdSec: number, baselineSec: number, driftSigma: number, driftHoldSec: number, cooldownSec: number}} anomaly
+ *   Anomaly detector tuning.
  */
 
 /** @type {Readonly<AppConfig>} */
@@ -256,6 +260,34 @@ export const config = Object.freeze({
   // Minimum gap between two commands to the same device. 0 disables the limit,
   // which is why this uses the non-negative reader.
   commandMinIntervalMs: readNonNegativeInt('COMMAND_MIN_INTERVAL_MS', 2000),
+
+  // Phase 5: the diagnosis agent (services/agent) and its MCP endpoint here.
+  agent: Object.freeze({
+    enabled: readBool('AGENT_ENABLED', true),
+    // Loopback by default; the browser never sees this URL (Node proxies chat).
+    url: readString('AGENT_URL', 'http://127.0.0.1:8100').replace(/\/+$/, ''),
+    // Shared bearer secret for /mcp and for calls to the agent. When unset, a
+    // random key is created once in a dot-directory under storage (gitignored,
+    // and refused by the /static mount) and the agent reads the same file.
+    serviceKey: readOptionalString('AGENT_SERVICE_KEY'),
+    keyFile: path.resolve(PROJECT_ROOT, readString('AGENT_KEY_FILE', 'storage/.agent/service.key')),
+    requestTimeoutMs: readPositiveInt('AGENT_TIMEOUT_MS', 8000),
+  }),
+
+  // The deterministic anomaly detector that opens investigations (no model).
+  anomaly: Object.freeze({
+    enabled: readBool('ANOMALY_ENABLED', true),
+    // A limit must be held this long on the 10 s window mean before it counts.
+    holdSec: readPositiveInt('ANOMALY_HOLD_SEC', 10),
+    // Seconds of history needed before a channel's baseline is trusted.
+    baselineSec: readPositiveInt('ANOMALY_BASELINE_SEC', 60),
+    // Drift: the 60 s mean must sit this many baseline deviations away, in the
+    // direction of the limit, for driftHoldSec.
+    driftSigma: readPositiveInt('ANOMALY_DRIFT_SIGMA', 6),
+    driftHoldSec: readPositiveInt('ANOMALY_DRIFT_HOLD_SEC', 20),
+    // After an investigation ends, the same machine waits this long.
+    cooldownSec: readNonNegativeInt('ANOMALY_COOLDOWN_SEC', 600),
+  }),
 });
 
 export default config;

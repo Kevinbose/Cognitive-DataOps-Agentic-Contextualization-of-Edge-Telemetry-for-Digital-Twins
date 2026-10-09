@@ -17,6 +17,8 @@ import * as THREE from 'three';
  * @property {string} path - Ancestor breadcrumb, e.g. `"Scene/Building/Wall_03"`.
  * @property {'Mesh'|'Group'} objectType
  * @property {number} vertexCount
+ * @property {string|null} label - The part's human name from the glTF extras
+ *   (`cdo_label`, written by the factory builder), when the model carries one.
  */
 
 /**
@@ -62,6 +64,8 @@ export function collectNamedMeshes(root) {
       path: segments.join('/'),
       objectType: 'Mesh',
       vertexCount: geometry?.attributes?.position?.count ?? 0,
+      // A multi-primitive node becomes a group of meshes; its extras sit on the group.
+      label: object.userData?.cdo_label ?? object.parent?.userData?.cdo_label ?? null,
     });
   });
 
@@ -111,6 +115,31 @@ export function computeFramingForObject(object, camera, padding = 1.6) {
 }
 
 /**
+ * A camera preset carried inside the model as two empty nodes:
+ * `VIEW_<NAME>` (the eye) and `VIEW_<NAME>_TARGET` (the point it looks at).
+ *
+ * A plant-scale twin framed by its whole bounding sphere starts hundreds of
+ * metres out, where every machine is a speck. A model can name a better
+ * starting view this way; a model without the nodes keeps the default framing.
+ *
+ * @param {THREE.Object3D} root - Typically `gltf.scene`.
+ * @param {string} [name] - Preset name, e.g. `"HOME"`.
+ * @returns {{position: THREE.Vector3, target: THREE.Vector3}|null} World
+ *   positions, or `null` when either node is missing.
+ */
+export function findNamedView(root, name = 'HOME') {
+  const eye = root.getObjectByName(`VIEW_${name}`);
+  const target = root.getObjectByName(`VIEW_${name}_TARGET`);
+  if (!eye || !target) return null;
+
+  root.updateWorldMatrix(true, true);
+  return {
+    position: eye.getWorldPosition(new THREE.Vector3()),
+    target: target.getWorldPosition(new THREE.Vector3()),
+  };
+}
+
+/**
  * Format a byte count for display.
  *
  * @param {number} bytes - Size in bytes.
@@ -153,4 +182,74 @@ export function disposeSceneResources(root) {
       material.dispose();
     }
   });
+}
+
+/* ── Camera moves ────────────────────────────────────────────────────────────
+   Pure math for the animated camera in `CameraCommands`, kept here so it can
+   be tested without a WebGL context. */
+
+/**
+ * The object to frame for a mesh name. A glTF node with several materials
+ * loads as a group of meshes named `<node>_<n>`; framing one primitive would
+ * zoom onto a fragment, so the whole group is framed instead.
+ *
+ * @param {THREE.Object3D|undefined} mesh
+ * @returns {THREE.Object3D|undefined}
+ */
+export function focusSubject(mesh) {
+  const parent = mesh?.parent;
+  if (parent && parent.type === 'Group' && parent.name && mesh.name.startsWith(`${parent.name}_`)) return parent;
+  return mesh;
+}
+
+/**
+ * Where the camera goes to frame a bounding sphere: same viewing direction,
+ * pivot on the sphere's centre, backed off until the sphere fits the narrower
+ * field of view with a margin, within the orbit distance limits.
+ *
+ * @param {object} args
+ * @param {THREE.Vector3} args.cameraPosition
+ * @param {THREE.Vector3} args.orbitTarget
+ * @param {THREE.Sphere} args.sphere
+ * @param {number} args.fovDeg - Vertical field of view.
+ * @param {number} args.aspect
+ * @param {number} [args.minDistance]
+ * @param {number} [args.maxDistance]
+ * @param {number} [args.margin] - 1 fits the sphere edge to edge.
+ * @returns {{position: THREE.Vector3, target: THREE.Vector3, distance: number}}
+ */
+export function planFocus({ cameraPosition, orbitTarget, sphere, fovDeg, aspect, minDistance = 0, maxDistance = Infinity, margin = 1.4 }) {
+  const vfov = THREE.MathUtils.degToRad(fovDeg);
+  const hfov = 2 * Math.atan(Math.tan(vfov / 2) * Math.max(aspect, 0.1));
+  const half = Math.min(vfov, hfov) / 2;
+  const radius = Math.max(sphere.radius, 0.01);
+  const distance = THREE.MathUtils.clamp((radius / Math.sin(half)) * margin, minDistance, maxDistance);
+
+  const direction = cameraPosition.clone().sub(orbitTarget);
+  if (direction.lengthSq() < 1e-9) direction.set(1, 0.8, 1);
+  direction.normalize();
+
+  return {
+    position: sphere.center.clone().addScaledVector(direction, distance),
+    target: sphere.center.clone(),
+    distance,
+  };
+}
+
+/** @param {number} t - 0 to 1. @returns {number} Eased progress, slow in and out. */
+export function easeInOutCubic(t) {
+  const x = THREE.MathUtils.clamp(t, 0, 1);
+  return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
+}
+
+/**
+ * How long a camera move takes: longer for a longer trip, never sluggish.
+ *
+ * @param {number} travel - Distance the camera moves.
+ * @param {number} scale - Size of the scene (the orbit distance before the move).
+ * @returns {number} Milliseconds, 450 to 1200.
+ */
+export function moveDurationMs(travel, scale) {
+  const ratio = scale > 0 ? travel / scale : 1;
+  return Math.round(THREE.MathUtils.clamp(450 + 500 * Math.sqrt(ratio), 450, 1200));
 }

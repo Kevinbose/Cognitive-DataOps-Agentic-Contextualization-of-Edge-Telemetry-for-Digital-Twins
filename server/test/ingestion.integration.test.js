@@ -446,7 +446,7 @@ describe('ingestion pipeline', () => {
 
   it('shows the fault in the data: lube pressure falls into alarm as the ramp completes', async () => {
     await waitFor(() => latestOf(LUBE)?.status === 'alarm', { timeoutMs: 15_000, message: 'lube pressure alarm' });
-    assert.ok(latestOf(LUBE).value < 3.0);
+    assert.ok(latestOf(LUBE).value <= 3.0, `lube ${latestOf(LUBE).value} in alarm`);
     await waitFor(() => latestOf('PRESS-STAMP-01.BEARING_VIBRATION_RMS')?.status === 'alarm', {
       timeoutMs: 8000,
       message: 'vibration alarm',

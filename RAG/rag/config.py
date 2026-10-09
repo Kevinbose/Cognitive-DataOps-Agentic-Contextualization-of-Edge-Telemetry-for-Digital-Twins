@@ -49,9 +49,9 @@ EMBEDDING_MODEL = os.environ.get("GEMINI_EMBEDDING_MODEL", "gemini-embedding-2")
 EMBEDDING_DIM = _int("GEMINI_EMBEDDING_DIM", 3072)
 
 # --- quota ceilings (kept below the real limits on purpose) ---------------
-GENERATION_RPM_LIMIT = _int("GEMINI_GENERATION_RPM_LIMIT", 10)       # real: 15
+GENERATION_RPM_LIMIT = _int("GEMINI_GENERATION_RPM_LIMIT", 5)        # gemini-3.5-flash-lite key: 5 RPM
 GENERATION_RPD_LIMIT = _int("GEMINI_GENERATION_RPD_LIMIT", 350)      # real: 500
-GENERATION_TPM_LIMIT = _int("GEMINI_GENERATION_TPM_LIMIT", 200_000)  # real: 250k
+GENERATION_TPM_LIMIT = _int("GEMINI_GENERATION_TPM_LIMIT", 250_000)  # gemini-3.5-flash-lite key: 250k TPM
 EMBEDDING_RPM_LIMIT = _int("GEMINI_EMBEDDING_RPM_LIMIT", 80)         # real: 100
 EMBEDDING_RPD_LIMIT = _int("GEMINI_EMBEDDING_RPD_LIMIT", 800)        # real: 1000
 EMBEDDING_TPM_LIMIT = _int("GEMINI_EMBEDDING_TPM_LIMIT", 24_000)     # real: 30k

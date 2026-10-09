@@ -1,0 +1,28 @@
+# Diagnosis agent (services/agent). Install into services/agent/.venv:
+#   python -m venv services/agent/.venv
+#   services/agent/.venv/Scripts/python -m pip install -r services/agent/requirements.txt
+#
+# orjson and faiss-cpu are pinned to builds that Windows Application Control
+# (Smart App Control) lets load on the development machine; newer builds of
+# both were blocked as unknown native code. Move the pins together if you upgrade.
+
+fastapi>=0.115
+uvicorn>=0.30
+langgraph>=1.0,<2
+langgraph-checkpoint-sqlite>=3.0
+mcp>=1.25,<2            # 1.x speaks the same protocol revision as the Node server's SDK
+httpx>=0.27
+numpy>=2.0
+pydantic>=2.8
+orjson==3.11.9
+tzdata                  # zoneinfo has no time zone database on Windows without it
+
+# the RAG module in RAG/ (its requirements.txt, minus the PDF reader only ingestion needs)
+google-genai>=2.29
+faiss-cpu==1.14.3
+rank-bm25>=0.2.2
+python-dotenv>=1.0
+
+# tests
+pytest>=8
+pytest-asyncio>=0.24

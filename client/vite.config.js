@@ -16,7 +16,8 @@ import tailwindcss from '@tailwindcss/vite';
  * first, where nothing is listening, and the proxy then fails with
  * ECONNREFUSED even though the server is up.
  */
-const API_ORIGIN = 'http://127.0.0.1:5000';
+// Overridable so a second, isolated stack can run beside the usual one.
+const API_ORIGIN = process.env.CDO_API_ORIGIN ?? 'http://127.0.0.1:5000';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],

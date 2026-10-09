@@ -259,6 +259,70 @@
     }
   }
 
+  /* A side panel arriving from the right edge (inspector, assistant): functional
+     motion that shows where the panel came from. Stilled by the global
+     reduced-motion rule, like every other animation here. */
+  .slide-in-right {
+    animation: slide-in-right 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  /* A floating panel (the assistant) arriving: a short drift from the right
+     with a fade, so it settles in place instead of sweeping across the view. */
+  .panel-in {
+    animation: panel-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    will-change: transform, opacity;
+  }
+
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Viewport chrome stepping aside for the assistant: a fade, not a pop. */
+  .fade-in {
+    animation: fade-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* A list row the viewer just located: one brief brand outline, then gone. */
+  .located-flash {
+    animation: located-flash 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
+  }
+
+  @keyframes located-flash {
+    0% {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+    100% {
+      outline: 2px solid transparent;
+      outline-offset: 6px;
+    }
+  }
+
   /* Long-form reading (terms, privacy). 16/26 body at about 65 characters a
      line. Headings are sentence case and ruled, not decorated. */
   .legal-prose h2 {

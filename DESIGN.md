@@ -204,10 +204,19 @@ arrow, no scroll reveal, no stagger. The only motion is functional:
 
 - a skeleton's opacity pulse,
 - a button spinner and the model load bar,
-- the 3D bind flash (1.6 s) and the pulse on an agent or alarm highlight.
+- the 3D bind flash (1.6 s) and the pulse on an agent or alarm highlight,
+- the camera gliding to a part picked in the component list or named by the
+  agent, and the toolbar's zoom and rotate steps: eased in and out, 0.45 to
+  1.2 s depending on the distance, cancelled the moment the operator grabs the
+  view. In a plant this size a cut would lose the operator; the move keeps them
+  oriented,
+- the inspector and the assistant sliding in from the right edge (240 ms),
+  and the component list gliding to a part picked on the model, with one brief
+  brand outline on the row it found.
 
 Under `prefers-reduced-motion` all of it is stilled: pulses become a steady
-highlight of the same duration.
+highlight of the same duration, and the camera jumps straight to its
+destination.
 
 ## 7. Anti-patterns (banned, and enforced by `scripts/audit-ui.mjs`)
 

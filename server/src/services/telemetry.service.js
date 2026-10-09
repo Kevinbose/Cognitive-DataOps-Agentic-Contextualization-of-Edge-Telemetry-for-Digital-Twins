@@ -34,6 +34,7 @@
  */
 
 import { config } from '../config/env.config.js';
+import { initAnomalyDetector, observe as observeAnomaly } from './anomaly.service.js';
 import { evaluateStatus } from '../utils/channelStatus.js';
 import { LatestPerKey } from '../utils/writeBuffer.js';
 import { parseInboundTopic, sensorIdFor } from '../utils/mqttTopics.js';
@@ -245,6 +246,7 @@ function onTelemetry(machineId, topic, payload) {
     };
 
     latest.set(sensorId, sample);
+    observeAnomaly(sample);
     emitPending.offer(sensorId, sample);
     persistPending.offer(sensorId, { sample, stamped });
   }
@@ -438,6 +440,7 @@ export async function startIngestion({
 
   await deviceService.initDeviceRegistry({ siteId });
   deviceService.startDeviceTicker();
+  await initAnomalyDetector();
 
   emitTimer = setInterval(flushEmit, Math.round(1000 / config.telemetry.emitHzMax));
   emitTimer.unref();

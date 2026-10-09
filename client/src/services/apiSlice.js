@@ -72,7 +72,7 @@ export const apiSlice = createApi({
    * one tag, and the sidebar, 3D highlight, and stats all re-derive from the
    * refetched payload. No manual cache patching anywhere in the app.
    */
-  tagTypes: ['Asset', 'TwinScene', 'Sim'],
+  tagTypes: ['Asset', 'TwinScene', 'Sim', 'Investigation', 'Report', 'AgentStatus'],
 
   // Refetch when the user returns to the tab — an operator leaving a twin open
   // on a second monitor should not be looking at an hour-old mapping table.

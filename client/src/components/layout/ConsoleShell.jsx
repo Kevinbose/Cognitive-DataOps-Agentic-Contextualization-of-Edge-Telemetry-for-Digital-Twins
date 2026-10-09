@@ -8,8 +8,11 @@
  * @module components/layout/ConsoleShell
  */
 
-import { NavLink } from 'react-router-dom';
+import { NavLink, useParams } from 'react-router-dom';
 
+import { PlantAlertBanner } from '../../features/agent/components/AgentAlertBanner.jsx';
+import AssistantWidget, { AssistantButton } from '../../features/agent/components/AssistantWidget.jsx';
+import { useGetAssetByIdQuery } from '../../features/assets/assetsApiSlice.js';
 import ConnectionChip from '../../features/telemetry/components/ConnectionChip.jsx';
 
 /** @type {Array<{to: string, label: string, end?: boolean}>} */
@@ -40,6 +43,10 @@ export function BrandMark() {
  * @returns {import('react').JSX.Element}
  */
 export function ConsoleShell({ children }) {
+  // On an asset's own pages the assistant talks about that twin; elsewhere, the plant.
+  const { assetId } = useParams();
+  const { data: asset } = useGetAssetByIdQuery(assetId, { skip: !assetId });
+
   return (
     <div className="flex min-h-dvh flex-col">
       {/* First tabbable element on every page. */}
@@ -84,16 +91,27 @@ export function ConsoleShell({ children }) {
             ))}
           </nav>
 
-          {/* ── Live connection ────────────────────────────────────────────── */}
-          <div className="hidden items-center md:flex">
-            <ConnectionChip />
+          {/* ── Live connection and the assistant ──────────────────────────── */}
+          <div className="flex items-center gap-5">
+            <span className="hidden md:inline-flex">
+              <ConnectionChip />
+            </span>
+            <AssistantButton label={assetId ? 'Ask about this twin' : 'Assistant'} />
           </div>
         </div>
       </header>
 
+      <PlantAlertBanner />
+
       <main id="main-content" className="mx-auto w-full max-w-[1600px] flex-1 px-6 py-8">
         {children}
       </main>
+
+      {assetId ? (
+        <AssistantWidget scope="twin" assetId={assetId} assetName={asset?.name ?? null} />
+      ) : (
+        <AssistantWidget scope="plant" />
+      )}
 
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">

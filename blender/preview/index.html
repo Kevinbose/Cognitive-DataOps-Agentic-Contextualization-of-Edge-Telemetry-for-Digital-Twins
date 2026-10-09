@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twin preview</title>
+<!--
+  Opens a .glb exactly the way the twin viewer renders it: the same lights as
+  client/src/features/twin-viewer/scene/SceneLighting.jsx, no tone mapping,
+  sRGB output, a transparent canvas over the stage colour, and the same
+  bounding-sphere framing as computeFramingForObject (three-helpers.js).
+
+  Serve the repository root and open:
+    python -m http.server 8765 --bind 127.0.0.1
+    http://127.0.0.1:8765/blender/preview/index.html?glb=/blender/out/car_factory_updated.glb
+  Click a part to see the mesh name the viewer binds to.
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #d4d7d1; font: 13px/1.4 system-ui, sans-serif; color: #1d1f1d; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #hud { position: fixed; left: 8px; top: 8px; max-width: 46ch; background: #f4f4f0; border: 1px solid #8a8f88; padding: 6px 8px; }
+  #hud b { font-family: ui-monospace, monospace; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">Loading geometry</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const params = new URLSearchParams(location.search);
+const url = params.get('glb') || '/blender/out/car_factory_updated.glb';
+const hud = document.getElementById('hud');
+const canvas = document.getElementById('c');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
+
+// SceneLighting.jsx, same values
+scene.add(new THREE.HemisphereLight('#ffffff', '#c4c8bf', 1.15));
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const key = new THREE.DirectionalLight('#ffffff', 1.5); key.position.set(8, 12, 6); scene.add(key);
+const fill = new THREE.DirectionalLight('#f0f0ea', 0.55); fill.position.set(-7, 5, -4); scene.add(fill);
+const rim = new THREE.DirectionalLight('#ffffff', 0.35); rim.position.set(0, -6, -9); scene.add(rim);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.zoomToCursor = true;
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+let root = null;
+const t0 = performance.now();
+new GLTFLoader().load(url, (gltf) => {
+  root = gltf.scene;
+  scene.add(root);
+  let meshes = 0, tris = 0, dup = 0;
+  const names = new Set();
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    meshes++;
+    const g = o.geometry;
+    tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+    if (o.name && names.has(o.name)) dup++;
+    if (o.name) names.add(o.name);
+  });
+  // computeFramingForObject, same maths
+  const box = new THREE.Box3().setFromObject(root);
+  const sphere = box.getBoundingSphere(new THREE.Sphere());
+  const r = sphere.radius > 0 ? sphere.radius : 1;
+  const dist = (r / Math.sin((camera.fov * Math.PI) / 180 / 2)) * 1.6;
+  const dir = new THREE.Vector3(1, 0.55, 1).normalize();
+  camera.position.copy(sphere.center).addScaledVector(dir, dist);
+  camera.near = Math.max(dist / 1000, 0.01);
+  camera.far = dist * 10;
+  camera.updateProjectionMatrix();
+  controls.target.copy(sphere.center);
+  controls.minDistance = dist * 0.02;
+  controls.maxDistance = dist * 8;
+  // Home view carried in the model as two empty nodes, as the twin viewer reads it
+  const eye = root.getObjectByName('VIEW_HOME');
+  const tgt = root.getObjectByName('VIEW_HOME_TARGET');
+  if (eye && tgt && !params.has('framing')) {
+    root.updateWorldMatrix(true, true);
+    camera.position.copy(eye.getWorldPosition(new THREE.Vector3()));
+    controls.target.copy(tgt.getWorldPosition(new THREE.Vector3()));
+  }
+  controls.update();
+  window.__stats = { meshes, triangles: Math.round(tris), duplicateNames: dup, uniqueNames: names.size,
+                     loadMs: Math.round(performance.now() - t0), framingDistance: Math.round(dist), names: [...names] };
+  hud.innerHTML = `Meshes <b>${meshes}</b>, triangles <b>${Math.round(tris).toLocaleString()}</b>, duplicate names <b>${dup}</b>, load <b>${window.__stats.loadMs} ms</b>`;
+}, undefined, (err) => { hud.textContent = 'Failed to load: ' + err.message; });
+
+// Blender coordinates in, three.js out: three (x, y, z) = blender (x, z, -y)
+window.setView = (bx, by, bz, tx, ty, tz) => {
+  camera.position.set(bx, bz, -by);
+  controls.target.set(tx, tz, -ty);
+  controls.update();
+};
+
+// Fly to a named view carried in the model: goView('ROBOT_WELD_01')
+window.goView = (name) => {
+  const e = root && root.getObjectByName('VIEW_' + name);
+  const t = root && root.getObjectByName('VIEW_' + name + '_TARGET');
+  if (!e || !t) return false;
+  camera.position.copy(e.getWorldPosition(new THREE.Vector3()));
+  controls.target.copy(t.getWorldPosition(new THREE.Vector3()));
+  controls.update();
+  return true;
+};
+
+const ray = new THREE.Raycaster();
+canvas.addEventListener('pointerdown', (e) => {
+  if (!root) return;
+  const rect = canvas.getBoundingClientRect();
+  const p = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+  ray.setFromCamera(p, camera);
+  const hit = ray.intersectObject(root, true)[0];
+  if (!hit) return;
+  const o = hit.object;
+  const ud = o.userData || {};
+  hud.innerHTML = `Mesh <b>${o.name}</b>${ud.cdo_label ? `<br>${ud.cdo_label}` : ''}${ud.cdo_suggested_channel ? `<br>Channel <b>${ud.cdo_suggested_channel}</b>` : ''}`;
+});
+
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>
+</body>
+</html>

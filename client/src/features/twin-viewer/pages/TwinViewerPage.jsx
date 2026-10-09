@@ -30,6 +30,11 @@ import { ErrorState, LoadingState } from '../../../components/ui/Feedback.jsx';
 import { useAppDispatch, useAppSelector } from '../../../app/hooks.js';
 import { usePageTitle } from '../../../lib/usePageTitle.js';
 import { getErrorMessage } from '../../../services/apiSlice.js';
+import { reportOpened, selectChatOpen, selectOpenReportId, twinClosed, twinOpened } from '../../agent/agentSlice.js';
+import { TwinAlertBanner } from '../../agent/components/AgentAlertBanner.jsx';
+import AgentPointerChip from '../../agent/components/AgentPointerChip.jsx';
+import AssistantWidget, { AssistantButton } from '../../agent/components/AssistantWidget.jsx';
+import DiagnosticReportPanel from '../../agent/components/DiagnosticReportPanel.jsx';
 import ConnectionChip from '../../telemetry/components/ConnectionChip.jsx';
 import DeviceStrip from '../../telemetry/components/DeviceStrip.jsx';
 import FaultPanel from '../../telemetry/components/FaultPanel.jsx';
@@ -37,6 +42,7 @@ import LiveChannelsPanel from '../../telemetry/components/LiveChannelsPanel.jsx'
 import MachinesPanel from '../../telemetry/components/MachinesPanel.jsx';
 import { useAssetRoom } from '../../telemetry/realtime/socketClient.js';
 import { useGetMetaQuery } from '../../telemetry/telemetryApiSlice.js';
+import { selectBindingDraft } from '../../telemetry/telemetrySlice.js';
 import { useTwinMachines } from '../../telemetry/useTwinMachines.js';
 import MeshInspectorPanel from '../components/MeshInspectorPanel.jsx';
 import MeshListPicker from '../components/MeshListPicker.jsx';
@@ -49,6 +55,8 @@ import {
   requestCameraReset,
   resetViewer,
   selectAutoRotate,
+  selectIsMappingPanelOpen,
+  selectSelectedMeshName,
   selectShowBlueprintGrid,
   toggleAutoRotate,
   toggleBlueprintGrid,
@@ -133,6 +141,28 @@ export function TwinViewerPage() {
   useEffect(() => {
     dispatch(resetViewer());
   }, [assetId, dispatch]);
+
+  /**
+   * This twin is the one on screen: the agent's commands for it apply here, and
+   * a link from a plant notice (`?report=<id>`) opens that report.
+   */
+  const linkedReport = searchParams.get('report');
+  useEffect(() => {
+    dispatch(twinOpened(assetId));
+    if (linkedReport && /^[0-9a-f]{24}$/i.test(linkedReport)) dispatch(reportOpened(linkedReport));
+    return () => {
+      dispatch(twinClosed());
+    };
+  }, [assetId, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const openReportId = useAppSelector(selectOpenReportId);
+  const chatOpen = useAppSelector(selectChatOpen);
+  const selectedMeshName = useAppSelector(selectSelectedMeshName);
+  const panelWanted = useAppSelector(selectIsMappingPanelOpen);
+  const bindingDraft = useAppSelector(selectBindingDraft);
+  // The inspector appears when something needs it: a part, a binding waiting
+  // for a part, or a report. Its close button hides it until the next pick.
+  const inspectorOpen = Boolean(openReportId) || (panelWanted && Boolean(selectedMeshName || bindingDraft));
 
   /** Escape clears the selection — the expected gesture in any CAD tool. */
   useEffect(() => {
@@ -232,7 +262,7 @@ export function TwinViewerPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <ConnectionChip className="mr-2" />
+          <ConnectionChip className="mr-2" assetId={assetId} />
 
           <SegmentedGroup label="Viewport options">
             <SegmentedButton
@@ -285,17 +315,19 @@ export function TwinViewerPage() {
           <Button size="sm" to={`/assets/${assetId}/mapping`}>
             Mappings
           </Button>
+          <AssistantButton />
         </div>
       </header>
 
       <DeviceStrip assetId={assetId} />
+      <TwinAlertBanner assetId={assetId} />
 
       {/* ── Workspace ────────────────────────────────────────────────────────
           Three columns from `lg`. Below that they stack: the panel above the
           viewport, the inspector below it, and the page scrolls. */}
       <main
         id="main-content"
-        className="grid flex-1 grid-cols-1 lg:min-h-0 lg:grid-cols-[288px_1fr_360px]"
+        className="grid flex-1 grid-cols-1 lg:min-h-0 lg:grid-cols-[288px_1fr]"
       >
         {/* Scene panel: components, live telemetry and (in demo mode) faults. */}
         <aside
@@ -366,23 +398,49 @@ export function TwinViewerPage() {
           </div>
         </aside>
 
-        {/* 3D viewport */}
-        <div id="viewport" className="stage relative h-[60dvh] lg:h-auto lg:min-h-0">
-          <TwinCanvas modelUrl={scene.modelUrl} />
-          <ViewportFrame
-            registeredCount={scene.stats.registeredNodes}
-            mappedCount={scene.stats.mappedNodes}
+        {/* Workspace: the viewport fills it; the inspector and the assistant
+            slide in over its right side, so the canvas never resizes under them. */}
+        <div className="relative flex min-h-0 flex-col lg:block">
+          <div id="viewport" className="stage relative h-[60dvh] lg:h-full lg:min-h-0">
+            <TwinCanvas modelUrl={scene.modelUrl} />
+            <AgentPointerChip />
+            <ViewportFrame
+              registeredCount={scene.stats.registeredNodes}
+              mappedCount={scene.stats.mappedNodes}
+              rightInset={inspectorOpen ? 360 : 0}
+              quiet={chatOpen}
+            />
+          </div>
+
+          {/* Inspector, or the diagnostic report while one is open. Hidden until
+              something needs it; arrives from the right. */}
+          {inspectorOpen ? (
+            <aside
+              key={openReportId ? 'report' : 'inspector'}
+              aria-label={openReportId ? 'Diagnostic report' : 'Component inspector'}
+              className="slide-in-right z-20 min-h-0 border-t border-line bg-surface lg:absolute lg:inset-y-0 lg:right-0 lg:w-[360px] lg:overflow-y-auto lg:border-l lg:border-t-0"
+            >
+              {openReportId ? (
+                <DiagnosticReportPanel reportId={openReportId} />
+              ) : (
+                <>
+                  <h2 className="sr-only">Component inspector</h2>
+                  <MeshInspectorPanel assetId={assetId} registeredByName={registeredByName} />
+                </>
+              )}
+            </aside>
+          ) : null}
+
+          <AssistantWidget
+            scope="twin"
+            assetId={assetId}
+            assetName={scene.asset.name}
+            withSelection
+            activePanel={panel}
+            placement="workspace"
+            besideInspector={inspectorOpen}
           />
         </div>
-
-        {/* Inspector */}
-        <aside
-          aria-label="Component inspector"
-          className="min-h-0 border-t border-line bg-surface lg:overflow-y-auto lg:border-l lg:border-t-0"
-        >
-          <h2 className="sr-only">Component inspector</h2>
-          <MeshInspectorPanel assetId={assetId} registeredByName={registeredByName} />
-        </aside>
       </main>
     </div>
   );

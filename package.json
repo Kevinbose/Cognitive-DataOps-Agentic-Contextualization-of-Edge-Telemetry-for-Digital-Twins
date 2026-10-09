@@ -2,7 +2,7 @@
   "name": "cognitive-dataops",
   "version": "0.1.0",
   "private": true,
-  "description": "Cognitive DataOps \u2014 Agentic Contextualization of Edge Telemetry for Digital Twins. Enterprise-grade digital twin asset pipeline and spatial sensor-mapping platform.",
+  "description": "Cognitive DataOps — Agentic Contextualization of Edge Telemetry for Digital Twins. Enterprise-grade digital twin asset pipeline and spatial sensor-mapping platform.",
   "type": "module",
   "license": "UNLICENSED",
   "engines": {
@@ -19,7 +19,10 @@
     "dev:client": "npm run dev --workspace client",
     "start": "npm run start --workspace server",
     "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "agent": "node scripts/agent.mjs",
+    "agent:setup": "node scripts/agent.mjs setup",
+    "agent:test": "node scripts/agent.mjs test"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

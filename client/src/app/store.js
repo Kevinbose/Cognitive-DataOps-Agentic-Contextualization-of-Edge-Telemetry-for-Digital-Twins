@@ -8,6 +8,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 
 import { apiSlice } from '../services/apiSlice.js';
+import agentReducer from '../features/agent/agentSlice.js';
 import telemetryReducer from '../features/telemetry/telemetrySlice.js';
 import twinViewerReducer from '../features/twin-viewer/twinViewerSlice.js';
 
@@ -16,6 +17,7 @@ export const store = configureStore({
     [apiSlice.reducerPath]: apiSlice.reducer,
     twinViewer: twinViewerReducer,
     telemetry: telemetryReducer,
+    agent: agentReducer,
   },
 
   middleware: (getDefaultMiddleware) =>

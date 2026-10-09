@@ -9,6 +9,7 @@ import http from 'node:http';
 import { createApp } from './app.js';
 import { config } from './config/env.config.js';
 import { connectDatabase, disconnectDatabase } from './config/db.config.js';
+import { getServiceKey } from './services/agentKey.service.js';
 import { startBindingIndex, stopBindingIndex } from './services/bindingIndex.service.js';
 import { endMqtt, stopConsuming } from './services/mqtt.service.js';
 import { ensureStorageReady } from './services/storage.service.js';
@@ -75,6 +76,12 @@ async function bootstrap() {
       `(${config.nodeEnv})`,
   );
   console.log(`[server] Health check: http://${config.host}:${config.port}/api/v1/health`);
+
+  if (config.agent.enabled) {
+    // Created now, not on first use, so the agent can read it as soon as it starts.
+    getServiceKey();
+    console.log(`[server] Diagnosis agent expected at ${config.agent.url} (start it with: npm run agent)`);
+  }
 
   if (ingestionEnabled) {
     await startBindingIndex();

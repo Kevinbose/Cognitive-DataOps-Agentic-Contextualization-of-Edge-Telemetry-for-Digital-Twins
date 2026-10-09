@@ -127,7 +127,7 @@ export function MachinesPanel({ assetId, onShowTelemetry, onKeepOpen }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <p className="border-b border-line px-4 py-3 text-xs text-ink-muted">
-        A gateway announces itself and appears under Available. Add it to this twin to see its live
+        A gateway that comes online appears under Available. Add it to this twin to see its live
         data and bind its channels to components.
       </p>
 
@@ -255,12 +255,12 @@ export function MachinesPanel({ assetId, onShowTelemetry, onKeepOpen }) {
             description={
               meta && !meta.features?.ingestion
                 ? 'Telemetry ingestion is off. Set MQTT_URL in server/.env and restart the API.'
-                : 'Power on a gateway, or start the simulator. A machine appears here as soon as it announces itself.'
+                : 'Power on a gateway, or start the simulator. A machine appears here as soon as it comes online.'
             }
           />
         ) : (
           <p className="border-b border-line px-4 py-3 text-xs text-ink-muted">
-            No other machines have announced themselves.
+            No other machine is online and free. A gateway appears here as soon as it comes online.
           </p>
         )}
       </section>

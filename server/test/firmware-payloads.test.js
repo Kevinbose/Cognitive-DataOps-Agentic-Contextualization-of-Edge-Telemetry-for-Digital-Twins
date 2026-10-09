@@ -28,7 +28,8 @@ import {
 import { loadCatalog } from '../scripts/lib/gateway.mjs';
 
 const HEADER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'firmware', 'cdo-edge-gateway', 'payloads.h');
-const source = fs.readFileSync(HEADER, 'utf8');
+// Normalised: Git on Windows (core.autocrlf) checks the header out with CRLF.
+const source = fs.readFileSync(HEADER, 'utf8').replace(/\r\n/g, '\n');
 const catalog = loadCatalog();
 
 /* ─── Reading format strings out of the C++ ───────────────────────────────── */

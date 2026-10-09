@@ -305,6 +305,38 @@ export async function findLatestSpectrum(machineId) {
   return doc ? { ts: doc.ts, key: doc.meta.key, amp: doc.amp } : null;
 }
 
+/**
+ * The newest stored spectra for a machine, newest first.
+ *
+ * @param {string} machineId - Machine id.
+ * @param {number} limit - How many frames, at most.
+ * @returns {Promise<Array<{ts: Date, key: string, amp: number[]}>>}
+ */
+export async function findRecentSpectra(machineId, limit) {
+  const docs = await TelemetrySpectrum.find({ 'meta.machineId': machineId })
+    .sort({ ts: -1 })
+    .limit(limit)
+    .lean();
+  return docs.map((doc) => ({ ts: doc.ts, key: doc.meta.key, amp: doc.amp }));
+}
+
+/**
+ * Raw readings of one sensor in a time range, oldest first. For feature
+ * extraction that needs every sample (a cycle-locked harmonic is averaged
+ * away by one-second buckets).
+ *
+ * @param {{sensorId: string, from: Date, to: Date, limit: number}} query
+ * @returns {Promise<Array<{t: number, v: number}>>}
+ */
+export async function findRawReadings({ sensorId, from, to, limit }) {
+  const docs = await TelemetryReading.find({ 'meta.sensorId': sensorId, ts: { $gte: from, $lte: to } })
+    .sort({ ts: -1 })
+    .limit(limit)
+    .select({ ts: 1, value: 1, _id: 0 })
+    .lean();
+  return docs.reverse().map((d) => ({ t: d.ts.getTime(), v: d.value }));
+}
+
 export default {
   ensureTelemetryStore,
   startTelemetryWriter,

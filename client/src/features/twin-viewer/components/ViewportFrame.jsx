@@ -40,9 +40,11 @@ function Stat({ label, value }) {
  * @param {object} props
  * @param {number} props.registeredCount
  * @param {number} props.mappedCount
+ * @param {number} [props.rightInset] - Pixels covered on the right by the inspector.
+ * @param {boolean} [props.quiet] - The assistant is open over the viewport: hide the census and the legend.
  * @returns {import('react').JSX.Element}
  */
-export function ViewportFrame({ registeredCount, mappedCount }) {
+export function ViewportFrame({ registeredCount, mappedCount, rightInset = 0, quiet = false }) {
   const discovered = useAppSelector(selectDiscoveredMeshes);
   const hoveredMeshName = useAppSelector(selectHoveredMeshName);
   const selectedMeshName = useAppSelector(selectSelectedMeshName);
@@ -50,9 +52,10 @@ export function ViewportFrame({ registeredCount, mappedCount }) {
   return (
     // `pointer-events-none` on the layer: chrome must never intercept an orbit
     // drag or a mesh click. Individual children re-enable it if interactive.
-    <div className="pointer-events-none absolute inset-0 z-10">
+    // The right edge moves left while the inspector covers it.
+    <div className="pointer-events-none absolute inset-y-0 left-0 z-10" style={{ right: rightInset }}>
       {/* ── Scene census ────────────────────────────────────────────────── */}
-      <div className="absolute right-4 top-4 w-52 border border-line bg-surface p-4">
+      <div className={`absolute right-4 top-4 w-52 border border-line bg-surface p-4 ${quiet ? 'hidden' : 'fade-in'}`}>
         <p className="label-text mb-2.5 text-ink-secondary">Scene census</p>
         <dl className="space-y-1.5">
           <Stat label="Mesh nodes" value={discovered.length} />
@@ -83,7 +86,7 @@ export function ViewportFrame({ registeredCount, mappedCount }) {
           </p>
         </div>
 
-        <p className="hidden shrink-0 border border-line bg-surface px-3 py-1.5 text-xs text-ink-muted xl:block">
+        <p className={`hidden shrink-0 border border-line bg-surface px-3 py-1.5 text-xs text-ink-muted ${quiet ? '' : 'fade-in xl:block'}`}>
           Drag to orbit, scroll to zoom, right-drag to pan
         </p>
       </div>

@@ -15,10 +15,11 @@ import Button from '../../../components/ui/Button.jsx';
 import { Crosshair, X } from '../../../components/ui/icons.js';
 import { Tag } from '../../../components/ui/StatusPill.jsx';
 import { useAppDispatch, useAppSelector } from '../../../app/hooks.js';
-import { selectBindingDraft } from '../../telemetry/telemetrySlice.js';
+import { bindingDraftSet, selectBindingDraft } from '../../telemetry/telemetrySlice.js';
 import {
   clearSelection,
   requestCameraCommand,
+  selectDiscoveredMeshes,
   selectSelectedMeshName,
 } from '../twinViewerSlice.js';
 import SensorMappingForm from './SensorMappingForm.jsx';
@@ -34,13 +35,25 @@ export function MeshInspectorPanel({ assetId, registeredByName }) {
   const selectedMeshName = useAppSelector(selectSelectedMeshName);
   const draft = useAppSelector(selectBindingDraft);
 
+  const discovered = useAppSelector(selectDiscoveredMeshes);
   const registered = selectedMeshName ? registeredByName.get(selectedMeshName) : null;
+  const label =
+    registered?.displayName || discovered.find((mesh) => mesh.name === selectedMeshName)?.label || null;
   const activeBinding = registered?.activeBinding ?? null;
 
   /* ── Nothing selected ─────────────────────────────────────────────────── */
   if (!selectedMeshName) {
     return (
-      <div className="px-5 py-8">
+      <div className="relative px-5 py-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          icon={X}
+          onClick={() => dispatch(bindingDraftSet(null))}
+          aria-label="Close the inspector"
+          title="Close"
+          className="absolute right-3 top-3"
+        />
         <h3 className="display-section">No component selected</h3>
         {draft ? (
           // The operator picked a channel with "Bind" and now needs a target.
@@ -64,9 +77,10 @@ export function MeshInspectorPanel({ assetId, registeredByName }) {
       <header className="border-b border-line px-4 py-3.5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="label-text mb-1.5">Selected component</p>
+            <p className="label-text mb-1">Selected component</p>
+            {label ? <p className="text-[15px] font-semibold leading-5 text-ink">{label}</p> : null}
             {/* `break-all`: glTF names are long, unbroken, slash-laden strings. */}
-            <p className="break-all font-mono text-xs leading-relaxed text-ink">
+            <p className="mt-0.5 break-all font-mono text-xs leading-relaxed text-ink-secondary">
               {selectedMeshName}
             </p>
           </div>
@@ -86,7 +100,8 @@ export function MeshInspectorPanel({ assetId, registeredByName }) {
               size="icon"
               icon={X}
               onClick={() => dispatch(clearSelection())}
-              aria-label="Clear selection"
+              aria-label="Close the inspector"
+              title="Close"
             />
           </div>
         </div>

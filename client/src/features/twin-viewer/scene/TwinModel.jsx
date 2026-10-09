@@ -22,7 +22,7 @@ import { useGLTF } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
 import { useAppDispatch, useAppSelector } from '../../../app/hooks.js';
-import { collectNamedMeshes, computeFramingForObject } from '../../../lib/three-helpers.js';
+import { collectNamedMeshes, computeFramingForObject, findNamedView } from '../../../lib/three-helpers.js';
 import { usePrefersReducedMotion } from '../../../lib/usePrefersReducedMotion.js';
 import { selectAlarmTints, tintsEqual } from '../../telemetry/telemetrySlice.js';
 import {
@@ -117,19 +117,28 @@ export function TwinModel({ url }) {
       /** @type {import('three').PerspectiveCamera} */ (camera),
     );
 
-    camera.position.copy(framing.position);
+    // A model may carry its own starting view (VIEW_HOME and VIEW_HOME_TARGET).
+    // Clipping planes and zoom limits still come from the whole-model framing,
+    // so zooming out from the home view still reaches the full site.
+    const home = findNamedView(preparedScene, 'HOME');
+    const eye = home ? home.position : framing.position;
+    const target = home ? home.target : framing.target;
+
+    camera.position.copy(eye);
     camera.near = framing.near;
     camera.far = framing.far;
     camera.updateProjectionMatrix();
-    camera.lookAt(framing.target);
+    camera.lookAt(target);
 
     const orbit = /** @type {any} */ (controls);
     if (orbit?.target) {
-      orbit.target.copy(framing.target);
+      orbit.target.copy(target);
       // Scale interaction speed to the subject: a zoom step that feels right
       // on a small pump is imperceptible on a factory floor.
       const span = framing.position.distanceTo(framing.target);
-      orbit.minDistance = span * 0.02;
+      // Close enough to frame a single small part (a filter, a gun tip) on a
+      // plant-scale model, still well outside the near clipping plane.
+      orbit.minDistance = span * 0.006;
       orbit.maxDistance = span * 8;
       orbit.update();
     }

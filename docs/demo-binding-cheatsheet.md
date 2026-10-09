@@ -4,6 +4,23 @@ The demo needs six bindings, one per telemetry channel, on the car factory asset
 
 ## Which meshes to pick
 
+### On the updated plant, `car_factory_updated.glb`
+
+The updated model (built by [`blender/build_car_factory.py`](../blender/README.md), layout in [`factory-floor-plan.md`](factory-floor-plan.md)) has a real part for every channel, named for it, so there is nothing to approximate. Filter the component list by `PRESS_` or `ROBOT_`:
+
+| Channel | Mesh | Display label |
+|---|---|---|
+| Axis 4 servo torque | `ROBOT_A4_SERVO_MOTOR` | Axis 4 servo motor |
+| Tool centre point deviation | `ROBOT_WELD_GUN_TIP` | Electrode caps (tool centre point) |
+| Weld gun temperature | `ROBOT_WELD_GUN` | Spot welding gun |
+| Main motor current | `PRESS_MAIN_MOTOR` | Main drive motor |
+| Lube oil pressure | `PRESS_LUBE_FILTER` | Lube oil filter bank |
+| Bearing vibration RMS | `PRESS_MAIN_BEARING` | Main bearing, drive end |
+
+The viewer opens on a view of both machines. To get close, select a mesh and use **Locate in viewport**.
+
+### On the original `car_factory.glb`
+
 `car_factory.glb` contains a six-axis welding robot (two of them), a spot weld gun and a stamping press, so the strongest demo binds to those. It has no lubrication unit, drive motor or bearing housing as separate parts, so for those you bind a mesh of the press and let the display label say what it stands for. Nothing searches the model for parts: you pick the mesh and the label carries the meaning.
 
 Suggested meshes (node names as the component list shows them; click each to see what lights up, and swap if another part reads better):

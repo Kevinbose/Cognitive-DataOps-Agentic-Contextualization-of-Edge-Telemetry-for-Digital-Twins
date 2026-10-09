@@ -13,6 +13,9 @@ import { useEffect } from 'react';
 
 import { useAppDispatch } from '../../../app/hooks.js';
 import { apiSlice } from '../../../services/apiSlice.js';
+import { alertReceived } from '../../agent/agentSlice.js';
+import { getSessionId } from '../../agent/session.js';
+import { applyUiCommands, highlightAlertTargets } from '../../agent/uiCommands.js';
 import {
   ackReceived,
   connectionChanged,
@@ -45,8 +48,15 @@ export function RealtimeBridge() {
     };
     const timer = setInterval(flush, FLUSH_INTERVAL_MS);
 
+    // This tab's assistant session: the agent's "show me" commands come to this
+    // room only. Rooms are lost on reconnect, so it is joined on every connect.
+    const joinSession = () => socket.emit('subscribe:session', getSessionId());
+
     const handlers = {
-      connect: () => dispatch(connectionChanged('live')),
+      connect: () => {
+        dispatch(connectionChanged('live'));
+        joinSession();
+      },
       disconnect: () => dispatch(connectionChanged('reconnecting')),
       connect_error: () => dispatch(connectionChanged('reconnecting')),
       snapshot: (snapshot) => dispatch(snapshotReceived(snapshot)),
@@ -62,6 +72,18 @@ export function RealtimeBridge() {
           dispatch(apiSlice.util.invalidateTags([{ type: 'Sim', id: ack.machineId }]));
         }
       },
+      // The diagnosis agent published a report: raise the banner, refresh the
+      // lists, and light the named parts if that twin is on screen.
+      'agent:alert': (alert) => {
+        dispatch(alertReceived(alert));
+        dispatch(highlightAlertTargets(alert));
+        dispatch(apiSlice.util.invalidateTags([{ type: 'Report', id: 'LIST' }, { type: 'Investigation', id: 'LIST' }]));
+      },
+      // An investigation opened, escalated, resolved or failed.
+      'agent:status': () =>
+        dispatch(apiSlice.util.invalidateTags([{ type: 'Investigation', id: 'LIST' }, 'AgentStatus'])),
+      // The assistant pointing at the twin, for this tab only.
+      'ui:command': (payload) => dispatch(applyUiCommands(payload)),
       // Another tab (or the agent, later) changed this asset's bindings.
       'twin:invalidate': ({ assetId }) =>
         dispatch(
@@ -79,7 +101,10 @@ export function RealtimeBridge() {
     socket.io.on('reconnect_failed', onReconnectFailed);
 
     socket.connect();
-    if (socket.connected) dispatch(connectionChanged('live'));
+    if (socket.connected) {
+      dispatch(connectionChanged('live'));
+      joinSession();
+    }
 
     return () => {
       clearInterval(timer);

@@ -29,3 +29,13 @@ process.env.COMMAND_MIN_INTERVAL_MS = '0';
 // Flush and emit quickly so tests wait tenths of a second, not seconds.
 process.env.TELEMETRY_PERSIST_HZ = '10';
 process.env.TELEMETRY_EMIT_HZ_MAX = '20';
+
+// Phase 5: a fixed service key (no key file is written by tests), the detector
+// off unless a suite turns it on, and an agent address where nothing listens.
+process.env.AGENT_SERVICE_KEY = 'test-service-key-0123456789abcdef0123456789abcdef';
+process.env.ANOMALY_ENABLED = 'false';
+process.env.AGENT_URL = 'http://127.0.0.1:9';
+process.env.AGENT_TIMEOUT_MS = '1500';
+
+// Uploaded files go to a throwaway folder, never the repository's storage/.
+process.env.STORAGE_ROOT = (await import('node:path')).join((await import('node:os')).tmpdir(), `cdo_test_storage_${randomBytes(4).toString('hex')}`);

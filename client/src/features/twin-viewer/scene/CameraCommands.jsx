@@ -1,24 +1,32 @@
 /**
- * @file Applies toolbar camera nudges (zoom, rotate) to the orbit controls.
+ * @file Applies camera commands (focus, zoom, rotate) to the orbit controls.
  *
  * Runs INSIDE `<Canvas>` because that is where the camera and controls live,
- * and renders nothing. The toolbar is ordinary DOM outside the canvas; the two
- * are connected only by the `cameraCommand` counter in the viewer slice, the
- * same pattern as the camera reset.
+ * and renders nothing. The toolbar, the component list and the diagnosis agent
+ * are ordinary DOM outside the canvas; they are connected only by the
+ * `cameraCommand` counter in the viewer slice, the same pattern as the reset.
  *
- * Orbit, pan and zoom are otherwise mouse gestures. These commands give each
- * one a click and keyboard alternative. `focus` frames a single named mesh: how
- * an operator finds one part among hundreds, and how the diagnosis agent will
- * point at the component it blames.
+ * `focus` frames a single named mesh: how an operator finds one part among
+ * thousands (click it in the component list), and how the agent points at the
+ * component it blames.
+ *
+ * Every command is a move, not a jump: the orbit pivot and the camera glide
+ * together, eased in and out, over a time that grows with the distance
+ * travelled. A move is functional motion, the one kind DESIGN.md allows: it
+ * keeps the operator oriented in a large plant where a cut would lose them.
+ * Under `prefers-reduced-motion` the camera jumps straight to the end. Grabbing
+ * the view mid-move cancels it, so the camera never fights the hand.
  *
  * @module features/twin-viewer/scene/CameraCommands
  */
 
 import { useEffect, useRef } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
 import { useAppSelector } from '../../../app/hooks.js';
+import { easeInOutCubic, focusSubject, moveDurationMs, planFocus } from '../../../lib/three-helpers.js';
+import { usePrefersReducedMotion } from '../../../lib/usePrefersReducedMotion.js';
 import { selectCameraCommand } from '../twinViewerSlice.js';
 
 /** One zoom step moves the camera this fraction of the way to (or from) the target. */
@@ -26,16 +34,40 @@ const ZOOM_IN_FACTOR = 0.8;
 const ZOOM_OUT_FACTOR = 1.25;
 /** One rotate step, in radians (15 degrees). */
 const ROTATE_STEP = Math.PI / 12;
-/** Focus frames a mesh from this many of its bounding radii away. */
-const FOCUS_DISTANCE_RADII = 3.2;
+/** Toolbar nudges are short moves. */
+const NUDGE_MS = 280;
+
+/**
+ * @typedef {object} Move
+ * @property {THREE.Vector3} fromPosition
+ * @property {THREE.Vector3} toPosition
+ * @property {THREE.Vector3} fromTarget
+ * @property {THREE.Vector3} toTarget
+ * @property {number} start - performance.now() at the first frame.
+ * @property {number} duration - Milliseconds.
+ * @property {boolean} orbitPath - Swing around the pivot (rotate) instead of a straight line.
+ */
 
 /**
  * @returns {null}
  */
 export function CameraCommands() {
-  const { camera, controls, scene } = useThree();
+  const { camera, controls, scene, size, invalidate } = useThree();
   const command = useAppSelector(selectCameraCommand);
+  const reducedMotion = usePrefersReducedMotion();
   const handled = useRef(command.nonce);
+  const move = useRef(/** @type {Move|null} */ (null));
+
+  // A hand on the view always wins over a move in progress.
+  useEffect(() => {
+    const orbit = /** @type {any} */ (controls);
+    if (!orbit?.addEventListener) return undefined;
+    const cancel = () => {
+      move.current = null;
+    };
+    orbit.addEventListener('start', cancel);
+    return () => orbit.removeEventListener('start', cancel);
+  }, [controls]);
 
   useEffect(() => {
     // Only act on a NEW command, never on mount or a re-render.
@@ -45,22 +77,30 @@ export function CameraCommands() {
     const orbit = /** @type {any} */ (controls);
     if (!orbit?.target || !command.action) return;
 
-    const offset = camera.position.clone().sub(orbit.target);
+    const fromPosition = camera.position.clone();
+    const fromTarget = orbit.target.clone();
+    const offset = fromPosition.clone().sub(fromTarget);
+    let toPosition;
+    let toTarget = fromTarget.clone();
+    let duration = NUDGE_MS;
+    let orbitPath = false;
 
     if (command.action === 'focus') {
-      const target = command.meshName ? scene.getObjectByName(command.meshName) : null;
-      if (!target) return;
-
-      // Keep the current viewing direction; move the pivot to the mesh and
-      // back off far enough to frame it, within the limits set for this model.
-      const sphere = new THREE.Box3().setFromObject(target).getBoundingSphere(new THREE.Sphere());
-      const distance = THREE.MathUtils.clamp(
-        Math.max(sphere.radius, 0.01) * FOCUS_DISTANCE_RADII,
-        orbit.minDistance ?? 0,
-        orbit.maxDistance ?? Infinity,
-      );
-      orbit.target.copy(sphere.center);
-      offset.setLength(distance);
+      const subject = focusSubject(command.meshName ? scene.getObjectByName(command.meshName) : undefined);
+      if (!subject) return;
+      const sphere = new THREE.Box3().setFromObject(subject).getBoundingSphere(new THREE.Sphere());
+      const plan = planFocus({
+        cameraPosition: fromPosition,
+        orbitTarget: fromTarget,
+        sphere,
+        fovDeg: /** @type {THREE.PerspectiveCamera} */ (camera).fov ?? 45,
+        aspect: size.width / Math.max(size.height, 1),
+        minDistance: orbit.minDistance ?? 0,
+        maxDistance: orbit.maxDistance ?? Infinity,
+      });
+      toPosition = plan.position;
+      toTarget = plan.target;
+      duration = moveDurationMs(fromPosition.distanceTo(toPosition), offset.length());
     } else if (command.action === 'zoomIn' || command.action === 'zoomOut') {
       const factor = command.action === 'zoomIn' ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR;
       // Respect the distance limits the model framing set for this asset.
@@ -69,17 +109,55 @@ export function CameraCommands() {
         orbit.minDistance ?? 0,
         orbit.maxDistance ?? Infinity,
       );
-      offset.setLength(distance);
+      toPosition = fromTarget.clone().add(offset.setLength(distance));
     } else {
       // Rotate about the vertical axis through the target.
       const spherical = new THREE.Spherical().setFromVector3(offset);
       spherical.theta += command.action === 'rotateLeft' ? -ROTATE_STEP : ROTATE_STEP;
-      offset.setFromSpherical(spherical);
+      toPosition = fromTarget.clone().add(new THREE.Vector3().setFromSpherical(spherical));
+      orbitPath = true;
     }
 
-    camera.position.copy(orbit.target).add(offset);
+    if (reducedMotion) {
+      move.current = null;
+      orbit.target.copy(toTarget);
+      camera.position.copy(toPosition);
+      orbit.update();
+      invalidate();
+      return;
+    }
+
+    move.current = { fromPosition, toPosition, fromTarget, toTarget, start: -1, duration, orbitPath };
+    invalidate();
+  }, [command, camera, controls, scene, size, reducedMotion, invalidate]);
+
+  useFrame(() => {
+    const m = move.current;
+    const orbit = /** @type {any} */ (controls);
+    if (!m || !orbit?.target) return;
+    const now = performance.now();
+    if (m.start < 0) m.start = now;
+    const t = Math.min(1, (now - m.start) / m.duration);
+    const k = easeInOutCubic(t);
+
+    orbit.target.lerpVectors(m.fromTarget, m.toTarget, k);
+    if (m.orbitPath) {
+      // Keep the distance while swinging round, so a rotate does not dip inward.
+      const a = new THREE.Spherical().setFromVector3(m.fromPosition.clone().sub(m.fromTarget));
+      const b = new THREE.Spherical().setFromVector3(m.toPosition.clone().sub(m.toTarget));
+      const s = new THREE.Spherical(
+        THREE.MathUtils.lerp(a.radius, b.radius, k),
+        THREE.MathUtils.lerp(a.phi, b.phi, k),
+        THREE.MathUtils.lerp(a.theta, b.theta, k),
+      );
+      camera.position.copy(orbit.target).add(new THREE.Vector3().setFromSpherical(s));
+    } else {
+      camera.position.lerpVectors(m.fromPosition, m.toPosition, k);
+    }
     orbit.update();
-  }, [command, camera, controls, scene]);
+    invalidate();
+    if (t >= 1) move.current = null;
+  });
 
   return null;
 }

@@ -93,3 +93,6 @@ skills-lock.json
 # Root-level `agent/` is a per-machine skill-install directory. Anchored so the
 # Phase 5 service at `services/agent/` is NOT swallowed by this rule.
 /agent/
+
+# Local notes that hold API keys. Never commit.
+/APIs.txt
